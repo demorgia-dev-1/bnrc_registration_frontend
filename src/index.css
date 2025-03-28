@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* .form {
+    background: url('/public/formpm.jpg');
+    object-fit: cover;
+    width: 100%;
+} */
