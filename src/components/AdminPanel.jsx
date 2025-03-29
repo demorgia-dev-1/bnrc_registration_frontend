@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import  { API_BASE_URL } from "../api/api"
+import { API_BASE_URL } from "../api/api";
 
 const AdminPanel = () => {
   const [formName, setFormName] = useState("");
@@ -32,13 +32,18 @@ const AdminPanel = () => {
       paymentDetails: paymentRequired ? paymentDetails : null,
       fields,
     };
-    console.log("api", API_BASE_URL)
+    console.log("api", API_BASE_URL);
     try {
+      const token = sessionStorage.getItem("token");
+
       const res = await axios.post(
         `${API_BASE_URL}/api/create-form`,
         formData,
         {
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
@@ -181,16 +186,25 @@ const AdminPanel = () => {
         className="w-full h-full object-cover absolute inset-0"
       />
       <div className="absolute top-0 right-0 h-full w-1/2 flex flex-col items-center justify-center z-10">
+        <div className="flex gap-10 p-5">
+          <a
+            href="http://localhost:5000/api/download/forms-excel"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-1 px-4 bg-white bg-opacity-95  rounded-l-lg shadow-lg overflow-y-auto"
+          >
+            Download Forms
+          </a>
 
-         <div className="flex gap-10 p-5">
-         <a href="http://localhost:5000/api/download/forms-excel" target="_blank" rel="noopener noreferrer" className="py-1 px-4 bg-white bg-opacity-95  rounded-l-lg shadow-lg overflow-y-auto">
-  Download All Forms (Excel)
-</a>
-
-<a href="http://localhost:5000/api/download/submissions-excel" target="_blank" rel="noopener noreferrer" className="py-1 px-4 bg-white bg-opacity-95  rounded-l-lg shadow-lg overflow-y-auto">
-  Download All Submissions (Excel)
-</a>
-         </div>
+          <a
+            href="http://localhost:5000/api/download/submissions-excel"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-1 px-4 bg-white bg-opacity-95  rounded-l-lg shadow-lg overflow-y-auto"
+          >
+            Download Submissions
+          </a>
+        </div>
         <form
           onSubmit={handleSubmit}
           className="mt-10 bg-white bg-opacity-95 p-10 rounded-l-lg shadow-lg w-full max-w-lg max-h-[80vh] overflow-y-auto"
@@ -255,28 +269,39 @@ const AdminPanel = () => {
           </div>
 
           {paymentRequired && (
-        <div className="mt-10">
-          <h3 className="text-lg font-semibold mb-2">Payment Details</h3>
-          <div className="mb-4">
-            <label className="block font-medium">Amount:</label>
-            <input
-              type="number"
-              value={paymentDetails.amount}
-              onChange={(e) => setPaymentDetails({ ...paymentDetails, amount: e.target.value })}
-              className="border p-2 w-full"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block font-medium">Payment Method:</label>
-            <input
-              type="text"
-              value={paymentDetails.method}
-              onChange={(e) => setPaymentDetails({ ...paymentDetails, method: e.target.value })}
-              className="border p-2 w-full"
-            />
-          </div>
-        </div>
-      )}
+            <div className="mt-10">
+              <h3 className="text-lg font-semibold mb-2">Payment Details</h3>
+              <div className="mb-4">
+                <label className="block font-medium">Amount:</label>
+                <input
+                  type="number"
+                  value={paymentDetails.amount}
+                  onWheel={(e) => e.target.blur()}
+                  onChange={(e) =>
+                    setPaymentDetails({
+                      ...paymentDetails,
+                      amount: e.target.value,
+                    })
+                  }
+                  className="border p-2 w-full"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block font-medium">Payment Method:</label>
+                <input
+                  type="text"
+                  value={paymentDetails.method}
+                  onChange={(e) =>
+                    setPaymentDetails({
+                      ...paymentDetails,
+                      method: e.target.value,
+                    })
+                  }
+                  className="border p-2 w-full"
+                />
+              </div>
+            </div>
+          )}
           <div className="mb-4">
             {fields.map((field, index) => (
               <div key={index} className="border p-4 rounded-lg mb-4">
@@ -358,6 +383,7 @@ const AdminPanel = () => {
                       <label className="block font-medium">Min Value:</label>
                       <input
                         type="number"
+                        onWheel={(e) => e.target.blur()}
                         value={field.min || ""}
                         onChange={(e) =>
                           handleFieldChange(index, "min", e.target.value)
@@ -368,6 +394,7 @@ const AdminPanel = () => {
                     <div>
                       <label className="block font-medium">Max Value:</label>
                       <input
+                        onWheel={(e) => e.target.blur()}
                         type="number"
                         value={field.max || ""}
                         onChange={(e) =>
@@ -384,6 +411,7 @@ const AdminPanel = () => {
                     <label className="block font-medium">Step:</label>
                     <input
                       type="number"
+                      onWheel={(e) => e.target.blur()}
                       value={field.step || ""}
                       onChange={(e) =>
                         handleFieldChange(index, "step", e.target.value)
@@ -394,14 +422,7 @@ const AdminPanel = () => {
                 )}
 
                 {field.type === "date" && (
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    {/* <input
-                      type="date"
-                      value={field.dateMax || ""}
-                      onChange={(e) => handleFieldChange(index, "dateMax", e.target.value)}
-                      className="border p-2 w-full"
-                    /> */}
-                  </div>
+                  <div className="grid grid-cols-2 gap-4 mb-4"></div>
                 )}
 
                 {(field.type === "text" || field.type === "textarea") && (
@@ -410,6 +431,7 @@ const AdminPanel = () => {
                       <label className="block font-medium">Min Length:</label>
                       <input
                         type="number"
+                        onWheel={(e) => e.target.blur()}
                         value={field.minLength || ""}
                         onChange={(e) =>
                           handleFieldChange(index, "minLength", e.target.value)
@@ -421,6 +443,7 @@ const AdminPanel = () => {
                       <label className="block font-medium">Max Length:</label>
                       <input
                         type="number"
+                        onWheel={(e) => e.target.blur()}
                         value={field.maxLength || ""}
                         onChange={(e) =>
                           handleFieldChange(index, "maxLength", e.target.value)

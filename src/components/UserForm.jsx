@@ -78,116 +78,48 @@ const UserForm = ({ fields: initialFields }) => {
     formResponses.permanent_city,
     formResponses.permanent_state,
   ]);
+  
+const validateForm = () => {
+  const errors = {};
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^[6-9]\d{9}$/;
+  const aadhaarRegex = /^\d{12}$/;
 
-  function validateAadhaarNumber(aadhaar) {
-    if (!/^\d{12}$/.test(aadhaar)) return false;
-  
-    const d = [
-      [0,1,2,3,4,5,6,7,8,9],
-      [1,2,3,4,0,6,7,8,9,5],
-      [2,3,4,0,1,7,8,9,5,6],
-      [3,4,0,1,2,8,9,5,6,7],
-      [4,0,1,2,3,9,5,6,7,8],
-      [5,9,8,7,6,0,4,3,2,1],
-      [6,5,9,8,7,1,0,4,3,2],
-      [7,6,5,9,8,2,1,0,4,3],
-      [8,7,6,5,9,3,2,1,0,4],
-      [9,8,7,6,5,4,3,2,1,0]
-    ];
-  
-    const p = [
-      [0,1,2,3,4,5,6,7,8,9],
-      [1,5,7,6,2,8,3,0,9,4],
-      [5,8,0,3,7,9,6,1,4,2],
-      [8,9,1,6,0,4,3,5,2,7],
-      [9,4,5,3,1,2,6,8,7,0],
-      [4,2,8,6,5,7,3,9,0,1],
-      [2,7,9,3,8,0,6,4,1,5],
-      [7,0,4,6,9,1,3,2,5,8]
-    ];
-  
-    const inv = [0,4,3,2,1,5,6,7,8,9];
-  
-    let c = 0;
-    const reversed = aadhaar.split("").reverse().map(Number);
-  
-    for (let i = 0; i < reversed.length; i++) {
-      c = d[c][p[i % 8][reversed[i]]];
+  form?.fields?.forEach((field) => {
+    const value = formResponses[field.name];
+
+    if (
+      field.required &&
+      (!value || value === "" || (Array.isArray(value) && value.length === 0))
+    ) {
+      errors[field.name] = `${field.label} is required.`;
     }
-  
-    return c === 0;
-  }
-  
-  const checkAadhaarUniqueness = async (aadhaarFieldName, aadhaarValue) => {
-    try {
-      const res = await axios.post(`${API_BASE_URL}/api/forms/check-aadhaar`, {
-        formId: form._id,
-        aadhaar: aadhaarValue,
-      });
-  
-      return res.data.exists;
-    } catch (err) {
-      console.error("Error checking Aadhaar uniqueness:", err);
-      return false; // Let backend handle in case of error
+
+    // Email
+    if (field.type === "email" && value && !emailRegex.test(value)) {
+      errors[field.name] = "Invalid email format.";
     }
-  };
-  
 
-  const validateForm = () => {
-    const errors = {};
-    const aadhaarRegex = /^\d{12}$/;
-    const aadhaarFieldMatch = /(aadhaar|aadhar|adhar|adhaar)/i;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/;
-    const phoneRegex = /^[6-9]\d{9}$/;
+    // Phone
+    if (
+      field.name.toLowerCase().includes("contact") &&
+      value &&
+      !phoneRegex.test(value)
+    ) {
+      errors[field.name] = "Invalid contact number.";
+    }
+    const lowerName = field.name.toLowerCase();
+    const isAadhaarField = /(aadhaar|aadhar|adhar)/i.test(lowerName);
+    const isFileUpload = value instanceof File;
 
-    form?.fields?.forEach((field) => {
-      const value = formResponses[field.name];
+    if (isAadhaarField && !isFileUpload && value && !aadhaarRegex.test(value)) {
+      errors[field.name] = "Invalid Aadhaar number. Must be 12 digits.";
+    }
+  });
 
-      if (
-        field.required &&
-        (!value || value === "" || (Array.isArray(value) && value.length === 0))
-      ) {
-        errors[field.name] = `${field.label} is required.`;
-      }
+  return errors;
+};
 
-      if (field.type === "email" && value && !emailRegex.test(value)) {
-        errors[field.name] = "Invalid email format.";
-      }
-
-      if (aadhaarFieldMatch.test(field.name) && value) {
-        const valStr = value.toString();
-        if (!/^\d+$/.test(valStr)) {
-          errors[field.name] = "Aadhaar must contain only digits.";
-        } else if (valStr.length !== 12) {
-          errors[field.name] = "Aadhaar must be exactly 12 digits.";
-        }
-      }
-          
-
-      // const aadhaarFieldMatch = /(aadhaar|aadhar|adhar|adhaar)/i;
-
-if (
-  aadhaarFieldMatch.test(field.name) &&
-  value &&
-  !validateAadhaarNumber(value.toString())
-) {
-  errors[field.name] = "Invalid Aadhaar number. Please enter a valid 12-digit Aadhaar.";
-}
-
-
-      if (
-        field.name.toLowerCase().includes("contact") &&
-        value &&
-        !phoneRegex.test(value)
-      ) {
-        errors[field.name] = "Invalid contact number.";
-      }
-    });
-
-    return errors;
-  };
 
   const hasAddressFields = () => {
     const fieldNames = form?.fields?.map((f) => f.name.toLowerCase()) || [];
@@ -196,6 +128,7 @@ if (
       fieldNames.some((name) => name.includes("correspondence"))
     );
   };
+
 
   const handleInputChange = (e) => {
     const { name, value, type, checked, files, options } = e.target;
@@ -221,7 +154,6 @@ if (
     }
   };
   const handleOtherInput = (name, value) => {
-    // 1. Add to form's select field options dynamically
     const updatedForm = { ...form };
     const fieldIndex = updatedForm.fields.findIndex((f) => f.name === name);
 
@@ -240,10 +172,8 @@ if (
 
       setForm(updatedForm);
 
-      // 2. Set the input value as selected
       setFormResponses((prev) => ({ ...prev, [name]: value }));
 
-      // 3. Hide input box
       setSelectOthers((prev) => ({ ...prev, [name]: false }));
     }
   };
@@ -256,58 +186,8 @@ if (
     return;
   }
 
-  // ✅ Step 2: Aadhaar uniqueness check
-  // const aadhaarFieldName = form.fields.find(f =>
-  //   /(aadhaar|aadhar|adhar)/i.test(f.name)
-  // )?.name;
-
-  // if (aadhaarFieldName) {
-  //   const aadhaarValue = formResponses[aadhaarFieldName];
-  //   if (aadhaarValue) {
-  //     try {
-  //       const aadhaarCheck = await axios.post("http://localhost:5000/api/forms/check-aadhaar", {
-  //         formId: form._id,
-  //         aadhaar: aadhaarValue,
-  //       });
-
-  //       if (aadhaarCheck.data.exists) {
-  //         alert("This Aadhaar has already been used in this form.");
-  //         return;
-  //       }
-  //     } catch (err) {
-  //       console.error("Error checking Aadhaar uniqueness:", err);
-  //       alert("Adhar number is already exist");
-  //       return;
-  //     }
-  //   }
-  // }
-  // const emailFieldName = form.fields.find(f =>
-  //   /email/i.test(f.name)
-  // )?.name;
-  
-  // if (emailFieldName) {
-  //   const emailValue = formResponses[emailFieldName];
-  //   if (emailValue) {
-  //     try {
-  //       const emailCheck = await axios.post("http://localhost:5000/api/forms/check-email", {
-  //         formId: form._id,
-  //         email: emailValue,
-  //       });
-  
-  //       if (emailCheck.data.exists) {
-  //         alert("This email has already been used in this form.");
-  //         return;
-  //       }
-  //     } catch (err) {
-  //       console.error("Error checking email uniqueness:", err);
-  //       alert("email id is already exist");
-  //       return;
-  //     }
-  //   }
-  // }
-
     try {
-      
+      const token = sessionStorage.getItem("token")
       const formData = new FormData();
       formData.append("form", form._id);
       const responses = {};
@@ -325,6 +205,7 @@ if (
         {
           headers: {
             "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`
           },
         }
       );
@@ -351,8 +232,6 @@ if (
                 const razorpay = new window.Razorpay(options);
                 razorpay.open();
         }
-        // Open the receipt in a new tab
-        // window.open(`http://localhost:5000/api/receipt/${submissionId}`, "_blank");
       } else {
         throw new Error(response.data.message);
       }
@@ -478,6 +357,7 @@ if (
                       name={field.name}
                       value={formResponses[field.name] || ""}
                       onChange={handleInputChange}
+                      onWheel={(e) => e.target.blur()}
                       required={field.required}
                       placeholder={
                         field.placeholder ||
