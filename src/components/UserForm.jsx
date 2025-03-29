@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { API_BASE_URL } from "../api/api";
 
 const UserForm = ({ fields: initialFields }) => {
   const { formId } = useParams();
@@ -21,7 +22,7 @@ const UserForm = ({ fields: initialFields }) => {
 
         if (formId) {
           const res = await axios.get(
-            `http://localhost:5000/api/forms/${formId}`
+            `${API_BASE_URL}/api/forms/${formId}`
           );
           formData = res.data;
         } else {
@@ -119,7 +120,7 @@ const UserForm = ({ fields: initialFields }) => {
   
   const checkAadhaarUniqueness = async (aadhaarFieldName, aadhaarValue) => {
     try {
-      const res = await axios.post("http://localhost:5000/api/forms/check-aadhaar", {
+      const res = await axios.post(`${API_BASE_URL}/api/forms/check-aadhaar`, {
         formId: form._id,
         aadhaar: aadhaarValue,
       });
@@ -319,7 +320,7 @@ if (
       });
       formData.append("responses", JSON.stringify(responses));
       const response = await axios.post(
-        `http://localhost:5000/api/submit-form/${form._id}`,
+        `${API_BASE_URL}/api/submit-form/${form._id}`,
         formData,
         {
           headers: {
@@ -332,7 +333,7 @@ if (
         const submissionId = response.data.submission._id;
         if(response.data.paymentRequired) {
           const data = await axios.post(
-            `http://localhost:5000/api/payment/create-order/${submissionId}`,
+            `${API_BASE_URL}/api/payment/create-order/${submissionId}`,
 
           );
           console.log("data", data)

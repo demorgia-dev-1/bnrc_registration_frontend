@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import  { API_BASE_URL } from "../api/api"
 
 const AdminPanel = () => {
   const [formName, setFormName] = useState("");
@@ -31,10 +32,10 @@ const AdminPanel = () => {
       paymentDetails: paymentRequired ? paymentDetails : null,
       fields,
     };
-
+    console.log("api", API_BASE_URL)
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/create-form",
+        `${API_BASE_URL}/api/create-form`,
         formData,
         {
           headers: { "Content-Type": "application/json" },
@@ -133,7 +134,7 @@ const AdminPanel = () => {
 
   const fetchForm = async (formId) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/forms/${formId}`);
+      const res = await axios.get(`${API_BASE_URL}/api/forms/${formId}`);
       console.log("Fetched form:", res.data);
       setCreatedForm(res.data);
       // setShowModal(true);
@@ -145,7 +146,7 @@ const AdminPanel = () => {
   const extendEndDate = async (formId, newEndDate) => {
     try {
       const res = await axios.put(
-        `http://localhost:5000/api/forms/${formId}/extend`,
+        `${API_BASE_URL}/api/forms/${formId}/extend`,
         { newEndDate }
       );
       alert("Form expiry date extended successfully.");

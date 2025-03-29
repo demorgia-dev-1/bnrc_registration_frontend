@@ -29,16 +29,16 @@
 
 import axios from "axios";
 
-const API_BASE_URL =  process.env.NODE_ENV === "production" ? "https://api.demorgia.com/api/admin" : "http://localhost:5000/api/admin";  // ✅ Correct endpoint
+export const API_BASE_URL =  import.meta.env.VITE_NODE_ENV === "production" ? "https://api.demorgia.com" : "http://localhost:5000";  // ✅ Correct endpoint
 
 
 export const loginAdmin = async (formData) => {
-  const response = await axios.post(`${API_BASE_URL}/login`, formData);
+  const response = await axios.post(`${API_BASE_URL}/api/admin/login`, formData);
   return response.data;
 };
 
 export const getAdminProfile = async (token) => {
-  const response = await axios.get(`${API_BASE_URL}/profile`, {
+  const response = await axios.get(`${API_BASE_URL}/api/admin/profile`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return response.data;
