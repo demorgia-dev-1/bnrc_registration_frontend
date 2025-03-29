@@ -29,7 +29,8 @@
 
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5000/api/admin";  // ✅ Correct endpoint
+const API_BASE_URL =  process.env.NODE_ENV === "production" ? "https://api.demorgia.com/api/admin" : "http://localhost:5000/api/admin";  // ✅ Correct endpoint
+
 
 export const loginAdmin = async (formData) => {
   const response = await axios.post(`${API_BASE_URL}/login`, formData);
