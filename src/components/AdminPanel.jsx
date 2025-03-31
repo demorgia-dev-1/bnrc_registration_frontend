@@ -186,9 +186,16 @@ const AdminPanel = () => {
 
   const extendEndDate = async (formId, newEndDate) => {
     try {
+      const token = sessionStorage.getItem("token");
       const res = await axios.put(
-        `${API_BASE_URL}/api/forms/${formId}/extend`,
-        { newEndDate }
+        `${API_BASE_URL}/api/forms/${formId}/extend`, 
+        { newEndDate },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       alert("Form expiry date extended successfully.");
       fetchForm(formId);
