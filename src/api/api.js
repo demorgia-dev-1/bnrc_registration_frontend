@@ -1,7 +1,7 @@
 
 import axios from "axios";
 
-export const API_BASE_URL =  import.meta.env.VITE_NODE_ENV === "production" ? "https://api.demorgia.com" : "http://localhost:5000";  // Correct endpoint
+export const API_BASE_URL =  import.meta.env.VITE_NODE_ENV === "production" ? "https://api.demorgia.com" : "http://localhost:5000";
 
 
 export const loginAdmin = async (formData) => {

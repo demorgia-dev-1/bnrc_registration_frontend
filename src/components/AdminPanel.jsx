@@ -20,6 +20,42 @@ const AdminPanel = () => {
 
   const navigate = useNavigate();
 
+  const downloadFormExcel = async () => {
+    const token = sessionStorage.getItem("token");
+  
+    const response = await axios.get(`${API_BASE_URL}/api/download/forms-excel`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      responseType: 'blob' // to handle file
+    });
+  
+    const blob = new Blob([response.data], { type: response.headers['content-type'] });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.download = "forms.xlsx";
+    link.click();
+  };
+
+  const downloadSubmissionExcel = async () => {
+    const token = sessionStorage.getItem("token");
+  
+    const response = await axios.get(`${API_BASE_URL}/api/download/submissions-excel`, {
+      
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      responseType: 'blob' // to handle file
+    });
+  
+    const blob = new Blob([response.data], { type: response.headers['content-type'] });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.download = "forms.xlsx";
+    link.click();
+  };
+  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -187,23 +223,14 @@ const AdminPanel = () => {
       />
       <div className="absolute top-0 right-0 h-full w-1/2 flex flex-col items-center justify-center z-10">
         <div className="flex gap-10 p-5">
-          <a
-            href="http://localhost:5000/api/download/forms-excel"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="py-1 px-4 bg-white bg-opacity-95  rounded-l-lg shadow-lg overflow-y-auto"
-          >
-            Download Forms
-          </a>
-
-          <a
-            href="http://localhost:5000/api/download/submissions-excel"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="py-1 px-4 bg-white bg-opacity-95  rounded-l-lg shadow-lg overflow-y-auto"
-          >
-            Download Submissions
-          </a>
+          <button
+           onClick={downloadFormExcel}
+           className="py-1 px-4 bg-white bg-opacity-95  rounded-l-lg shadow-lg overflow-y-auto"
+           >Download Forms</button>
+           <button
+           onClick={downloadSubmissionExcel}
+           className="py-1 px-4 bg-white bg-opacity-95  rounded-l-lg shadow-lg overflow-y-auto"
+           >Download Submissions</button>
         </div>
         <form
           onSubmit={handleSubmit}

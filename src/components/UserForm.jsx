@@ -78,7 +78,7 @@ const UserForm = ({ fields: initialFields }) => {
     formResponses.permanent_city,
     formResponses.permanent_state,
   ]);
-  
+
 const validateForm = () => {
   const errors = {};
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -283,12 +283,12 @@ const validateForm = () => {
         <form
           onSubmit={handleSubmit}
           encType="multipart/form-data"
-          className="bg-opacity-95 p-12 rounded-lg shadow-lg w-full max-w-[70%] max-h-[80vh] overflow-y-auto form bg-sky-50"
+          className="bg-opacity-95 p-4 md:p-10 rounded-lg shadow-lg w-full max-w-[70%] max-h-[80vh] overflow-y-auto form bg-sky-50"
         >
           <h2 className="text-3xl text-center font-bold mb-10">
             {formData.formName}
           </h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 w-full">
             {formData?.fields?.map((field, index) => (
               <React.Fragment key={index}>
                 <div
