@@ -45,8 +45,12 @@ const AdminPanel = () => {
       headers: {
         Authorization: `Bearer ${token}`
       },
+      
       responseType: 'blob' // to handle file
-    });
+      
+    }
+  );
+  console.log('responses',response)
   
     const blob = new Blob([response.data], { type: response.headers['content-type'] });
     const link = document.createElement('a');

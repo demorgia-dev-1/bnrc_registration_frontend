@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { API_BASE_URL } from "../api/api";
+import { useRef } from "react";
 
 const UserForm = ({ fields: initialFields }) => {
   const { formId } = useParams();
@@ -12,6 +13,9 @@ const UserForm = ({ fields: initialFields }) => {
   const [selectOthers, setSelectOthers] = useState({});
   const [customOptions, setCustomOptions] = useState({});
   const [paymentInfo, setPaymentInfo] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fileInputRefs = useRef({});
 
   useEffect(() => {
     if (!formId && !initialFields) return;
@@ -21,9 +25,7 @@ const UserForm = ({ fields: initialFields }) => {
         let formData;
 
         if (formId) {
-          const res = await axios.get(
-            `${API_BASE_URL}/api/forms/${formId}`
-          );
+          const res = await axios.get(`${API_BASE_URL}/api/forms/${formId}`);
           formData = res.data;
         } else {
           formData = { fields: initialFields };
@@ -79,47 +81,51 @@ const UserForm = ({ fields: initialFields }) => {
     formResponses.permanent_state,
   ]);
 
-const validateForm = () => {
-  const errors = {};
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const phoneRegex = /^[6-9]\d{9}$/;
-  const aadhaarRegex = /^\d{12}$/;
+  const validateForm = () => {
+    const errors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[6-9]\d{9}$/;
+    const aadhaarRegex = /^\d{12}$/;
 
-  form?.fields?.forEach((field) => {
-    const value = formResponses[field.name];
+    form?.fields?.forEach((field) => {
+      const value = formResponses[field.name];
 
-    if (
-      field.required &&
-      (!value || value === "" || (Array.isArray(value) && value.length === 0))
-    ) {
-      errors[field.name] = `${field.label} is required.`;
-    }
+      if (
+        field.required &&
+        (!value || value === "" || (Array.isArray(value) && value.length === 0))
+      ) {
+        errors[field.name] = `${field.label} is required.`;
+      }
 
-    // Email
-    if (field.type === "email" && value && !emailRegex.test(value)) {
-      errors[field.name] = "Invalid email format.";
-    }
+      // Email
+      if (field.type === "email" && value && !emailRegex.test(value)) {
+        errors[field.name] = "Invalid email format.";
+      }
 
-    // Phone
-    if (
-      field.name.toLowerCase().includes("contact") &&
-      value &&
-      !phoneRegex.test(value)
-    ) {
-      errors[field.name] = "Invalid contact number.";
-    }
-    const lowerName = field.name.toLowerCase();
-    const isAadhaarField = /(aadhaar|aadhar|adhar)/i.test(lowerName);
-    const isFileUpload = value instanceof File;
+      // Phone
+      if (
+        field.name.toLowerCase().includes("contact") &&
+        value &&
+        !phoneRegex.test(value)
+      ) {
+        errors[field.name] = "Invalid contact number.";
+      }
+      const lowerName = field.name.toLowerCase();
+      const isAadhaarField = /(aadhaar|aadhar|adhar)/i.test(lowerName);
+      const isFileUpload = value instanceof File;
 
-    if (isAadhaarField && !isFileUpload && value && !aadhaarRegex.test(value)) {
-      errors[field.name] = "Invalid Aadhaar number. Must be 12 digits.";
-    }
-  });
+      if (
+        isAadhaarField &&
+        !isFileUpload &&
+        value &&
+        !aadhaarRegex.test(value)
+      ) {
+        errors[field.name] = "Invalid Aadhaar number. Must be 12 digits.";
+      }
+    });
 
-  return errors;
-};
-
+    return errors;
+  };
 
   const hasAddressFields = () => {
     const fieldNames = form?.fields?.map((f) => f.name.toLowerCase()) || [];
@@ -128,7 +134,6 @@ const validateForm = () => {
       fieldNames.some((name) => name.includes("correspondence"))
     );
   };
-
 
   const handleInputChange = (e) => {
     const { name, value, type, checked, files, options } = e.target;
@@ -180,14 +185,20 @@ const validateForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    setIsSubmitting(true);
+
     const validationErrors = validateForm();
-  if (Object.keys(validationErrors).length > 0) {
-    setErrors(validationErrors);
-    return;
-  }
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+
+      setIsSubmitting(false);
+
+      return;
+    }
 
     try {
-      const token = sessionStorage.getItem("token")
+      const token = sessionStorage.getItem("token");
       const formData = new FormData();
       formData.append("form", form._id);
       const responses = {};
@@ -205,32 +216,41 @@ const validateForm = () => {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
           },
         }
       );
       if (response.status === 201) {
         alert("Form submitted successfully!");
-        const submissionId = response.data.submission._id;
-        if(response.data.paymentRequired) {
-          const data = await axios.post(
-            `${API_BASE_URL}/api/payment/create-order/${submissionId}`,
 
+        setFormResponses({}); 
+      setErrors({});
+      
+      Object.values(fileInputRefs.current).forEach((input) => {
+        if (input) input.value = "";
+      });
+
+        setIsSubmitting(false);
+
+        const submissionId = response.data.submission._id;
+        if (response.data.paymentRequired) {
+          const data = await axios.post(
+            `${API_BASE_URL}/api/payment/create-order/${submissionId}`
           );
-          console.log("data", data)
+          console.log("data", data);
           const options = {
-                  key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-                  amount: data.data.order.amount,
-                  currency: "INR",
-                  name: "form submission",
-                  description: "Form Submission Payment",
-                  order_id: data.data.order.id,
-                  
-                  theme: { color: "#3399cc" },
-                };
-            
-                const razorpay = new window.Razorpay(options);
-                razorpay.open();
+            key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+            amount: data.data.order.amount,
+            currency: "INR",
+            name: "form submission",
+            description: "Form Submission Payment",
+            order_id: data.data.order.id,
+
+            theme: { color: "#3399cc" },
+          };
+
+          const razorpay = new window.Razorpay(options);
+          razorpay.open();
         }
       } else {
         throw new Error(response.data.message);
@@ -240,6 +260,7 @@ const validateForm = () => {
       alert(
         `Submission failed: ${error.response?.data?.message || error.message}`
       );
+      setIsSubmitting(false);
     }
   };
 
@@ -273,7 +294,7 @@ const validateForm = () => {
   if (!formData) return <div>Loading...</div>;
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen flex items-center justify-center bg-cover bg-center relative">
       <img
         src="/formpm.jpg"
         alt="form"
@@ -283,20 +304,29 @@ const validateForm = () => {
         <form
           onSubmit={handleSubmit}
           encType="multipart/form-data"
-          className="bg-opacity-95 p-4 md:p-10 rounded-lg shadow-lg w-full max-w-[70%] max-h-[80vh] overflow-y-auto form bg-sky-50"
+          className="bg-opacity-95 p-4 md:p-10 w-[90%]  sm:max-w-[90%] md:max-w-[80%] lg:max-w-[70%]  rounded-lg shadow-lg max-h-[80vh] overflow-y-auto bg-sky-50"          
+          id="user-form"
         >
           <h2 className="text-3xl text-center font-bold mb-10">
             {formData.formName}
           </h2>
-          <div className="grid grid-cols-2 gap-4 w-full">
+
+          <div className="flex flex-wrap justify-between gap-4 w-full">
             {formData?.fields?.map((field, index) => (
               <React.Fragment key={index}>
+                {/* <div
+                  className={`mb-4 ${
+                    ["textarea"].includes(field.type) ? "col-span-2" : "md:w-[48%]"
+                  }`}
+                > */}
                 <div
                   className={`mb-4 ${
-                    ["textarea"].includes(field.type) ? "col-span-2" : ""
+                    field.type === "textarea"
+                      ? "w-full"
+                      : "w-full sm:basis-[48%] sm:max-w-[48%]"
                   }`}
                 >
-                  <label className="block font-bold capitalize">
+                  <label className="block font-bold capitalize mb-2">
                     {field.label}:
                   </label>
                   {field.type === "text" && (
@@ -401,6 +431,7 @@ const validateForm = () => {
                     <input
                       type="file"
                       name={field.name}
+                      ref={(ref) => (fileInputRefs.current[field.name] = ref)}
                       onChange={handleInputChange}
                       required={field.required}
                       className="border border-2 p-2 w-full rounded focus:border-none focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-md"
@@ -588,11 +619,14 @@ const validateForm = () => {
             ))}
           </div>
           <button
-    type="submit"
-    className="bg-blue-500 text-white px-4 py-2 mt-4"
-  >
-    Submit
-  </button>
+            type="submit"
+            disabled={isSubmitting}
+            className={`bg-blue-500 text-white px-4 py-2 mt-4 rounded ${
+    isSubmitting ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-600"
+  }`}
+          >
+            {isSubmitting ? "Submitting..." : "Submit"}
+          </button>
         </form>
       </div>
     </div>
