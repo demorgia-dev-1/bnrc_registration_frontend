@@ -1,7 +1,105 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../api/api";
+
+const Modal = ({ show, onClose, data, children }) => {
+  if (!show) return null;
+
+  if (data) {
+    const formFields = data.form?.fields || [];
+    const responseMap = data.responses || {};
+    const uploadedFiles = data?.uploadedFiles || [];
+
+    const fileMap = {};
+    uploadedFiles.forEach((file) => {
+      if (!fileMap[file.fieldName]) fileMap[file.fieldName] = [];
+      fileMap[file.fieldName].push(file);
+    });
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
+        <div className="bg-white rounded-lg shadow-xl w-11/12 md:w-4/5 lg:w-2/3 max-h-[90vh] overflow-y-auto p-6">
+          <div className="flex justify-between mb-4">
+            <h2 className="text-xl font-bold">Form: {data.form?.formName}</h2>
+            <button
+              onClick={onClose}
+              className="text-red-600 text-2xl font-bold"
+            >
+              ×
+            </button>
+          </div>
+
+          <table className="w-full border border-gray-300 mb-4">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="p-2 border">Field</th>
+                <th className="p-2 border">Response</th>
+              </tr>
+            </thead>
+            <tbody>
+              {formFields.map((field) => (
+                <tr key={field.name}>
+                  <td className="border p-2">{field.label}</td>
+                  {/* <td className="border p-2">
+                    {responseMap[field.name] || "—"}
+                  </td> */}
+                  <td className="border p-2">
+                    {responseMap[field.name] &&
+                    responseMap[field.name].toString().trim()
+                      ? responseMap[field.name]
+                      : "N/A"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <h3 className="text-lg font-semibold mb-2">Uploaded Files:</h3>
+          {data.uploadedFiles?.length > 0 ? (
+            <ul className="space-y-1">
+              {data.uploadedFiles.map((file, idx) => (
+                <li
+                  key={idx}
+                  className="flex justify-between bg-gray-100 p-2 rounded"
+                >
+                  <span>{file.fieldname}</span>
+                  <a
+                    href={`${API_BASE_URL}/api/download/${file.fileId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="py-1 px-4 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 cursor-pointer"
+                  >
+                    Download
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No files uploaded.</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
+      <div className="bg-white rounded-lg shadow-xl w-11/12 md:w-4/5 lg:w-2/3 max-h-[90vh] overflow-y-auto p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Uploaded Files</h2>
+          <button
+            onClick={onClose}
+            className="text-red-600 text-xl font-bold hover:text-red-800"
+          >
+            ×
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+};
 
 const AdminPanel = () => {
   const [formName, setFormName] = useState("");
@@ -16,53 +114,131 @@ const AdminPanel = () => {
   });
   const [fields, setFields] = useState([]);
   const [createdForm, setCreatedForm] = useState(null);
-  const [error, setError] = useState(null);
+
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [showListModal, setShowListModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState(null);
+  const [dateFilter, setDateFilter] = useState("");
+const [customStart, setCustomStart] = useState("");
+const [customEnd, setCustomEnd] = useState("");
+const [selectedFormId, setSelectedFormId] = useState("");
+const [availableForms, setAvailableForms] = useState([]);
+
 
   const navigate = useNavigate();
 
+
+  useEffect(() => {
+    const fetchSubmissions = async () => {
+      try {
+        const token = sessionStorage.getItem("token");
+        const res = await axios.get(`${API_BASE_URL}/api/submissions`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setUploadedFiles(res.data.submissions);
+        // setUploadedFiles(res.data.submissions || []);
+      } catch (err) {
+        console.error("Error fetching submissions:", err);
+      }
+    };
+
+    fetchSubmissions();
+  }, []);
+
+  useEffect(() => {
+    const fetchFiles = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/api/files`);
+        setUploadedFiles(res.data.files || []);
+      } catch (err) {
+        console.error("Error fetching files:", err);
+      }
+    };
+
+    fetchFiles();
+  }, []);
+
   const downloadFormExcel = async () => {
-    const token = sessionStorage.getItem("token");
+    try {
+      const token = sessionStorage.getItem("token");
+      console.log("Token:", token); // debug
   
-    const response = await axios.get(`${API_BASE_URL}/api/download/forms-excel`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      responseType: 'blob' // to handle file
-    });
+      const response = await axios.get(`${API_BASE_URL}/api/download/forms-excel`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        responseType: 'blob'
+      });
   
-    const blob = new Blob([response.data], { type: response.headers['content-type'] });
-    const link = document.createElement('a');
-    link.href = window.URL.createObjectURL(blob);
-    link.download = "forms.xlsx";
-    link.click();
+      const blob = new Blob([response.data], { type: response.headers['content-type'] });
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = "forms.xlsx";
+      link.click();
+    } catch (error) {
+      if (
+        error.response &&
+        error.response.data instanceof Blob &&
+        error.response.data.type === "application/json"
+      ) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const errorMessage = JSON.parse(reader.result);
+          console.error("Error downloading Excel:", errorMessage);
+          alert("Download failed: " + (errorMessage?.error || "Unknown error"));
+        };
+        reader.readAsText(error.response.data);
+      } else {
+        console.error(" Download error:", error);
+        alert("Download failed: " + (error.response?.data?.error || error.message));
+      }
+    }
+    
   };
 
   const downloadSubmissionExcel = async () => {
-    const token = sessionStorage.getItem("token");
+    try {
+      const token = sessionStorage.getItem("token");
+      console.log("Token:", token); // debug
+
+      // if (!selectedFormId) {
+      //   alert("Please select a form to download submissions.");
+      //   return;
+      // }
   
-    const response = await axios.get(`${API_BASE_URL}/api/download/submissions-excel`, {
-      
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      
-      responseType: 'blob' // to handle file
-      
+      // const params = new URLSearchParams();
+      // if (selectedFormId) params.append("formId", selectedFormId);
+      // if (dateFilter) params.append("filter", dateFilter);
+      // if (customStart) params.append("startDate", customStart);
+      // if (customEnd) params.append("endDate", customEnd);
+  
+      const response = await axios.get(
+        `${API_BASE_URL}/api/download/submissions-excel`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: "blob",
+        }
+      );
+  
+      const blob = new Blob([response.data], {
+        type: response.headers["content-type"],
+      });
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(blob);
+      link.download = "submissions.xlsx";
+      link.click();
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert("Failed to download submissions");
     }
-  );
-  console.log('responses',response)
-  
-    const blob = new Blob([response.data], { type: response.headers['content-type'] });
-    const link = document.createElement('a');
-    link.href = window.URL.createObjectURL(blob);
-    link.download = "forms.xlsx";
-    link.click();
   };
-  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     const formData = {
       formName,
       startDate,
@@ -72,10 +248,10 @@ const AdminPanel = () => {
       paymentDetails: paymentRequired ? paymentDetails : null,
       fields,
     };
-    console.log("api", API_BASE_URL);
+  
     try {
       const token = sessionStorage.getItem("token");
-
+  
       const res = await axios.post(
         `${API_BASE_URL}/api/create-form`,
         formData,
@@ -86,32 +262,33 @@ const AdminPanel = () => {
           },
         }
       );
-
+  
       console.log("Form created successfully:", res.data);
-
+  
       const formId = res.data.form?._id;
-
+  
       if (formId) {
         console.log("Form ID:", formId);
+
+        setFormName("");
+        setStartDate("");
+        setEndDate("");
+        setStatus("Active");
+        setPaymentRequired(false);
+        setPaymentDetails({ amount: "", method: "" });
+        setFields([]);
+  
         openFormInNewTab(formId);
-        generatePlaceholder();
       } else {
         console.error("Form ID missing from the response.");
       }
-
-      // Reset form fields
-      setFormName("");
-      setStartDate("");
-      setEndDate("");
-      setStatus("Active");
-      setPaymentRequired(false);
-      setPaymentDetails({ amount: "", method: "" });
-      setFields([]);
     } catch (error) {
       console.error("Error creating form:", error);
-      // alert("Failed to create form.");
+      alert("Failed to create form.");
     }
   };
+  
+
   const openFormInNewTab = (formId) => {
     const newTabUrl = `/user-form/${formId}`;
     const newTab = window.open(newTabUrl, "_blank");
@@ -120,36 +297,7 @@ const AdminPanel = () => {
       alert("Popup blocked! Please allow popups for this site.");
     }
   };
-
-  const generatePlaceholder = (field) => {
-    const label = field.label.toLowerCase();
-
-    switch (field.type) {
-      case "email":
-        return `Enter your ${label} (e.g., example@domain.com)`;
-      case "date":
-        return `Select ${label} date`;
-      case "time":
-        return `Select ${label} time`;
-      case "number":
-        return `Enter ${label} in numbers`;
-      case "select":
-      case "select-multiple":
-        return `Choose ${label} option(s)`;
-      case "checkbox":
-      case "radio":
-        return ""; // No placeholder for these types
-      case "file":
-        return `Upload ${label} file`;
-      case "range":
-        return `Slide to select ${label}`;
-      case "color":
-        return `Pick ${label} color`;
-      default:
-        return `Enter ${label}`;
-    }
-  };
-
+  
   const handleAddField = () => {
     setFields([
       ...fields,
@@ -177,22 +325,33 @@ const AdminPanel = () => {
     setFields(newFields);
   };
 
+  // const fetchForm = async (formId) => {
+  //   try {
+  //     const res = await axios.get(`${API_BASE_URL}/api/forms/${formId}`);
+  //     console.log("Fetched form:", res.data);
+  //     setCreatedForm(res.data);
+  //     // setShowModal(true);
+  //     setAvailableForms(res.data.forms); 
+  //   } catch (error) {
+  //     console.error("Error fetching form:", error);
+  //   }
+  // };
+
   const fetchForm = async (formId) => {
     try {
       const res = await axios.get(`${API_BASE_URL}/api/forms/${formId}`);
-      console.log("Fetched form:", res.data);
       setCreatedForm(res.data);
-      // setShowModal(true);
     } catch (error) {
       console.error("Error fetching form:", error);
     }
   };
+  
 
   const extendEndDate = async (formId, newEndDate) => {
     try {
       const token = sessionStorage.getItem("token");
       const res = await axios.put(
-        `${API_BASE_URL}/api/forms/${formId}/extend`, 
+        `${API_BASE_URL}/api/forms/${formId}/extend`,
         { newEndDate },
         {
           headers: {
@@ -233,16 +392,139 @@ const AdminPanel = () => {
         className="w-full h-full object-cover absolute inset-0"
       />
       <div className="absolute top-0 right-0 h-full w-1/2 flex flex-col items-center justify-center z-10">
-        <div className="flex gap-10 p-5">
+        <div className="mt-10 bg-white bg-opacity-95 p-5 rounded-lg shadow-lg w-full max-w-lg max-h-[80vh] flex gap-4">
+          {/* Show All Submissions Modal */}
           <button
-           onClick={downloadFormExcel}
-           className="py-1 px-4 bg-white bg-opacity-95  rounded-l-lg shadow-lg overflow-y-auto"
-           >Download Forms</button>
-           <button
-           onClick={downloadSubmissionExcel}
-           className="py-1 px-4 bg-white bg-opacity-95  rounded-l-lg shadow-lg overflow-y-auto"
-           >Download Submissions</button>
+            onClick={() => setShowListModal(true)}
+            className="py-1 px-4 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 cursor-pointer"
+          >
+            Show Submissions
+          </button>
+
+          {/* List Modal */}
+          <Modal show={showListModal} onClose={() => setShowListModal(false)}>
+            <table className="min-w-full border border-gray-300">
+              <thead>
+                <tr className="bg-gray-200 text-left">
+                  <th className="p-2 border">Candidate</th>
+                  <th className="p-2 border">Submission ID</th>
+                  <th className="p-2 border">Files</th>
+                  <th className="p-2 border">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {uploadedFiles.map((submission) => (
+                  <tr key={submission._id} className="hover:bg-gray-50">
+                    {/* <td className="p-2 border">{submission.responses?.name || "N/A"}</td> */}
+                    <td className="p-2 border">
+                      {(() => {
+                        const formFields = submission.form?.fields || [];
+                        const candidateField = formFields.find(
+                          (f) =>
+                            f.label.toLowerCase().includes("name") ||
+                            f.name.toLowerCase().includes("name")
+                        );
+                        const candidateKey = candidateField?.name;
+                        return candidateKey
+                          ? submission.responses?.[candidateKey] || "N/A"
+                          : "N/A";
+                      })()}
+                    </td>
+
+                    <td className="p-2 border">{submission._id}</td>
+                    <td className="p-2 border">
+                      {submission.uploadedFiles?.length > 0
+                        ? submission.uploadedFiles.map((file, i) => (
+                            <div key={i}>{file.originalName}</div>
+                          ))
+                        : "No File"}
+                    </td>
+                    <td className="p-2 border">
+                      <button
+                        onClick={() => {
+                          setSelectedSubmission(submission);
+                          setShowDetailModal(true);
+                        }}
+                        className="py-1 px-4 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600 cursor-pointer"
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Modal>
+
+          {/* Detail Modal (Single Submission) */}
+          <Modal
+            show={showDetailModal}
+            onClose={() => {
+              setShowDetailModal(false);
+              setSelectedSubmission(null);
+            }}
+            data={selectedSubmission}
+          />
+
+          <button
+            onClick={downloadFormExcel}
+            className="py-1 px-4 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600 cursor-pointer"
+          >
+            Download Forms
+          </button>
+
+          {/* <div className="flex flex-col md:flex-row gap-2 mb-4">
+
+          <select
+  className="border p-2 rounded mb-2"
+  value={selectedFormId}
+  onChange={(e) => setSelectedFormId(e.target.value)}
+>
+  <option value="">Select Form</option>
+  {availableForms.map((form) => (
+    <option key={form._id} value={form._id}>
+      {form.formName}
+    </option>
+  ))}
+</select>
+
+
+  <select
+    onChange={(e) => setDateFilter(e.target.value)}
+    className="border p-2 rounded"
+  >
+    <option value="">Select Filter</option>
+    <option value="today">Today</option>
+    <option value="this_week">This Week</option>
+    <option value="this_month">This Month</option>
+    <option value="custom">Custom Range</option>
+  </select>
+
+  {dateFilter === "custom" && (
+    <div className="flex gap-2">
+      <input
+        type="date"
+        onChange={(e) => setCustomStart(e.target.value)}
+        className="border p-2 rounded"
+      />
+      <input
+        type="date"
+        onChange={(e) => setCustomEnd(e.target.value)}
+        className="border p-2 rounded"
+      />
+    </div>
+  )}
+</div> */}
+
+
+          <button
+            onClick={downloadSubmissionExcel}
+            className="py-1 px-4 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600 cursor-pointer"
+          >
+            Download Submissions
+          </button>
         </div>
+
         <form
           onSubmit={handleSubmit}
           className="mt-10 bg-white bg-opacity-95 p-10 rounded-l-lg shadow-lg w-full max-w-lg max-h-[80vh] overflow-y-auto"
@@ -518,7 +800,8 @@ const AdminPanel = () => {
             Create Form
           </button>
         </form>
-        <div className="mt-10 bg-white bg-opacity-95 p-10 rounded-l-lg shadow-lg w-full max-w-lg max-h-[80vh] overflow-y-auto">
+        <div className="mt-10 mb-10 bg-white bg-opacity-95 p-10 rounded-l-lg shadow-lg w-full max-w-lg max-h-[80vh] overflow-y-auto"
+        style={{ scrollbarWidth: "thin", scrollbarColor: "#ccc #f0f0f0" }}>
           <h2 className="text-xl font-bold mb-2 text-center">
             Extend Form Expiry
           </h2>

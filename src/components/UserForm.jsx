@@ -81,52 +81,6 @@ const UserForm = ({ fields: initialFields }) => {
     formResponses.permanent_state,
   ]);
 
-  const validateForm = () => {
-    const errors = {};
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^[6-9]\d{9}$/;
-    const aadhaarRegex = /^\d{12}$/;
-
-    form?.fields?.forEach((field) => {
-      const value = formResponses[field.name];
-
-      if (
-        field.required &&
-        (!value || value === "" || (Array.isArray(value) && value.length === 0))
-      ) {
-        errors[field.name] = `${field.label} is required.`;
-      }
-
-      // Email
-      if (field.type === "email" && value && !emailRegex.test(value)) {
-        errors[field.name] = "Invalid email format.";
-      }
-
-      // Phone
-      if (
-        field.name.toLowerCase().includes("contact") &&
-        value &&
-        !phoneRegex.test(value)
-      ) {
-        errors[field.name] = "Invalid contact number.";
-      }
-      const lowerName = field.name.toLowerCase();
-      const isAadhaarField = /(aadhaar|aadhar|adhar)/i.test(lowerName);
-      const isFileUpload = value instanceof File;
-
-      if (
-        isAadhaarField &&
-        !isFileUpload &&
-        value &&
-        !aadhaarRegex.test(value)
-      ) {
-        errors[field.name] = "Invalid Aadhaar number. Must be 12 digits.";
-      }
-    });
-
-    return errors;
-  };
-
   const hasAddressFields = () => {
     const fieldNames = form?.fields?.map((f) => f.name.toLowerCase()) || [];
     return (
@@ -182,18 +136,117 @@ const UserForm = ({ fields: initialFields }) => {
       setSelectOthers((prev) => ({ ...prev, [name]: false }));
     }
   };
+  const validateForm = async () => {
+    const errors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[6-9]\d{9}$/;
+    const aadhaarRegex = /^\d{12}$/;
+
+    for (const field of form?.fields || []) {
+      const value = formResponses[field.name];
+      const lowerName = field.name.toLowerCase();
+      const isAadhaarField = /(aadhaar|aadhar|adhar|adhaar)/i.test(lowerName);
+      const isPhoneField = /(contact|phone|mobile)/i.test(lowerName);
+      const isBNRCConfirmField = /(confirm).*bnrc/i.test(lowerName);
+      const isFileUpload = value instanceof File;
+
+      if (
+        field.required &&
+        (!value || value === "" || (Array.isArray(value) && value.length === 0))
+      ) {
+        errors[field.name] = `${field.label} is required.`;
+      }
+
+      if (field.type === "email" && value && !emailRegex.test(value)) {
+        errors[field.name] = "Invalid email format.";
+      }
+
+      if (isPhoneField && value && !phoneRegex.test(value)) {
+        errors[field.name] = "Invalid contact number.";
+      }
+
+      // Phone uniqueness check
+      if (isPhoneField && value) {
+        try {
+          const { data } = await axios.post(`${API_BASE_URL}/api/check-phone`, {
+            formId: form?._id,
+            phone: value,
+          });
+
+          if (data.exists) {
+            errors[field.name] =
+              "This phone number has already been used for this form.";
+          }
+        } catch (err) {
+          console.error("Phone uniqueness check failed:", err);
+        }
+      }
+
+      if (isAadhaarField && !isFileUpload && value) {
+        if (!aadhaarRegex.test(value)) {
+          errors[field.name] = "Aadhaar must be a 12-digit number.";
+        }
+      }
+      const isBnrcField = /(bnrc.*(number|no|reg))/i.test(lowerName);
+
+      if (isBnrcField && value && !isFileUpload) {
+        try {
+          const { data } = await axios.post(`${API_BASE_URL}/api/check-bnrc`, {
+            formId: form?._id,
+            bnrc: value,
+          });
+
+          if (data.exists) {
+            errors[field.name] =
+              "This BNRC registration number has already been used for this form.";
+          }
+        } catch (err) {
+          console.error("BNRC uniqueness check failed:", err);
+        }
+      }
+    }
+
+    return errors;
+  };
+
+  const handleBNRCChange = async (e) => {
+    const bnrc = e.target.value;
+    setFormResponses((prev) => ({
+      ...prev,
+      bnrc_registration_number: bnrc,
+    }));
+
+    if (bnrc.length >= 5) {
+      // optional length check
+      try {
+        const { data } = await axios.post(
+          `${API_BASE_URL}/api/get-details-by-bnrc`,
+          { bnrc }
+        );
+        if (data.success) {
+          const prefilledData = data.data;
+          setFormResponses((prev) => ({
+            ...prev,
+            ...prefilledData,
+          }));
+        } else {
+          console.log(data.message);
+        }
+      } catch (err) {
+        console.error("Error fetching details:", err);
+      }
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setIsSubmitting(true);
 
-    const validationErrors = validateForm();
+    const validationErrors = await validateForm(); // await async validator
+
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-
       setIsSubmitting(false);
-
       return;
     }
 
@@ -201,6 +254,7 @@ const UserForm = ({ fields: initialFields }) => {
       const token = sessionStorage.getItem("token");
       const formData = new FormData();
       formData.append("form", form._id);
+
       const responses = {};
       Object.entries(formResponses).forEach(([fieldName, value]) => {
         if (value instanceof File) {
@@ -209,7 +263,9 @@ const UserForm = ({ fields: initialFields }) => {
           responses[fieldName] = value;
         }
       });
+
       formData.append("responses", JSON.stringify(responses));
+
       const response = await axios.post(
         `${API_BASE_URL}/api/submit-form/${form._id}`,
         formData,
@@ -220,24 +276,21 @@ const UserForm = ({ fields: initialFields }) => {
           },
         }
       );
+
       if (response.status === 201) {
         alert("Form submitted successfully!");
-
-        setFormResponses({}); 
-      setErrors({});
-      
-      Object.values(fileInputRefs.current).forEach((input) => {
-        if (input) input.value = "";
-      });
-
-        setIsSubmitting(false);
+        setFormResponses({});
+        setErrors({});
+        Object.values(fileInputRefs.current).forEach((input) => {
+          if (input) input.value = "";
+        });
 
         const submissionId = response.data.submission._id;
         if (response.data.paymentRequired) {
           const data = await axios.post(
             `${API_BASE_URL}/api/payment/create-order/${submissionId}`
           );
-          console.log("data", data);
+
           const options = {
             key: import.meta.env.VITE_RAZORPAY_KEY_ID,
             amount: data.data.order.amount,
@@ -245,7 +298,6 @@ const UserForm = ({ fields: initialFields }) => {
             name: "form submission",
             description: "Form Submission Payment",
             order_id: data.data.order.id,
-
             theme: { color: "#3399cc" },
           };
 
@@ -255,6 +307,8 @@ const UserForm = ({ fields: initialFields }) => {
       } else {
         throw new Error(response.data.message);
       }
+
+      setIsSubmitting(false);
     } catch (error) {
       console.error("Submission failed:", error);
       alert(
@@ -292,6 +346,7 @@ const UserForm = ({ fields: initialFields }) => {
   };
 
   if (!formData) return <div>Loading...</div>;
+  
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-cover bg-center relative">
@@ -304,21 +359,15 @@ const UserForm = ({ fields: initialFields }) => {
         <form
           onSubmit={handleSubmit}
           encType="multipart/form-data"
-          className="bg-opacity-95 p-4 md:p-10 w-[90%]  sm:max-w-[90%] md:max-w-[80%] lg:max-w-[70%]  rounded-lg shadow-lg max-h-[80vh] overflow-y-auto bg-sky-50"          
-          id="user-form"
+          className="bg-opacity-95 p-4 md:p-10 w-[90%]  sm:max-w-[90%] md:max-w-[80%] lg:max-w-[70%]  rounded-lg shadow-lg max-h-[80vh] overflow-y-auto bg-sky-50"
         >
-          <h2 className="text-3xl text-center font-bold mb-10">
+          <h2 className="text-2xl md:text-3xl text-center font-bold mb-10">
             {formData.formName}
           </h2>
 
           <div className="flex flex-wrap justify-between gap-4 w-full">
             {formData?.fields?.map((field, index) => (
               <React.Fragment key={index}>
-                {/* <div
-                  className={`mb-4 ${
-                    ["textarea"].includes(field.type) ? "col-span-2" : "md:w-[48%]"
-                  }`}
-                > */}
                 <div
                   className={`mb-4 ${
                     field.type === "textarea"
@@ -327,14 +376,24 @@ const UserForm = ({ fields: initialFields }) => {
                   }`}
                 >
                   <label className="block font-bold capitalize mb-2">
-                    {field.label}:
+                    {field.label} :
+                    {field.required && (
+                      <span className="text-xl text-red-500"> *</span>
+                    )}
                   </label>
+
                   {field.type === "text" && (
                     <input
                       type="text"
                       name={field.name}
                       value={formResponses[field.name] || ""}
-                      onChange={handleInputChange}
+                      // onChange={handleInputChange}
+                      onChange={(e) => {
+                        handleInputChange(e);
+                        if (isBNRCField) {
+                          handleBNRCChange(e.target.value);
+                        }
+                      }}
                       placeholder={
                         field.placeholder ||
                         `Enter your ${field.label.toLowerCase()}`
@@ -622,8 +681,10 @@ const UserForm = ({ fields: initialFields }) => {
             type="submit"
             disabled={isSubmitting}
             className={`bg-blue-500 text-white px-4 py-2 mt-4 rounded ${
-    isSubmitting ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-600"
-  }`}
+              isSubmitting
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-blue-600"
+            }`}
           >
             {isSubmitting ? "Submitting..." : "Submit"}
           </button>
