@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../api/api";
+import { toast } from "react-toastify";
 
 const Modal = ({ show, onClose, data, children }) => {
   if (!show) return null;
@@ -41,9 +42,6 @@ const Modal = ({ show, onClose, data, children }) => {
               {formFields.map((field) => (
                 <tr key={field.name}>
                   <td className="border p-2">{field.label}</td>
-                  {/* <td className="border p-2">
-                    {responseMap[field.name] || "—"}
-                  </td> */}
                   <td className="border p-2">
                     {responseMap[field.name] &&
                     responseMap[field.name].toString().trim()
@@ -119,15 +117,12 @@ const AdminPanel = () => {
   const [showListModal, setShowListModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
-  const [dateFilter, setDateFilter] = useState("");
-const [customStart, setCustomStart] = useState("");
-const [customEnd, setCustomEnd] = useState("");
-const [selectedFormId, setSelectedFormId] = useState("");
-const [availableForms, setAvailableForms] = useState([]);
-
+  const [showFormIdModal, setShowFormIdModal] = useState(false);
+  const [formIdInput, setFormIdInput] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFormId, setEditFormId] = useState(null);
 
   const navigate = useNavigate();
-
 
   useEffect(() => {
     const fetchSubmissions = async () => {
@@ -139,7 +134,6 @@ const [availableForms, setAvailableForms] = useState([]);
           },
         });
         setUploadedFiles(res.data.submissions);
-        // setUploadedFiles(res.data.submissions || []);
       } catch (err) {
         console.error("Error fetching submissions:", err);
       }
@@ -165,16 +159,21 @@ const [availableForms, setAvailableForms] = useState([]);
     try {
       const token = sessionStorage.getItem("token");
       console.log("Token:", token); // debug
-  
-      const response = await axios.get(`${API_BASE_URL}/api/download/forms-excel`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-        responseType: 'blob'
+
+      const response = await axios.get(
+        `${API_BASE_URL}/api/download/forms-excel`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          responseType: "blob",
+        }
+      );
+
+      const blob = new Blob([response.data], {
+        type: response.headers["content-type"],
       });
-  
-      const blob = new Blob([response.data], { type: response.headers['content-type'] });
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = window.URL.createObjectURL(blob);
       link.download = "forms.xlsx";
       link.click();
@@ -193,10 +192,11 @@ const [availableForms, setAvailableForms] = useState([]);
         reader.readAsText(error.response.data);
       } else {
         console.error(" Download error:", error);
-        alert("Download failed: " + (error.response?.data?.error || error.message));
+        alert(
+          "Download failed: " + (error.response?.data?.error || error.message)
+        );
       }
     }
-    
   };
 
   const downloadSubmissionExcel = async () => {
@@ -204,17 +204,6 @@ const [availableForms, setAvailableForms] = useState([]);
       const token = sessionStorage.getItem("token");
       console.log("Token:", token); // debug
 
-      // if (!selectedFormId) {
-      //   alert("Please select a form to download submissions.");
-      //   return;
-      // }
-  
-      // const params = new URLSearchParams();
-      // if (selectedFormId) params.append("formId", selectedFormId);
-      // if (dateFilter) params.append("filter", dateFilter);
-      // if (customStart) params.append("startDate", customStart);
-      // if (customEnd) params.append("endDate", customEnd);
-  
       const response = await axios.get(
         `${API_BASE_URL}/api/download/submissions-excel`,
         {
@@ -222,7 +211,7 @@ const [availableForms, setAvailableForms] = useState([]);
           responseType: "blob",
         }
       );
-  
+
       const blob = new Blob([response.data], {
         type: response.headers["content-type"],
       });
@@ -236,9 +225,43 @@ const [availableForms, setAvailableForms] = useState([]);
     }
   };
 
+  const handleEditForm = async () => {
+    if (!formIdInput) {
+      toast.error("Please enter a Form ID.");
+      return;
+    }
+
+    try {
+      const token = sessionStorage.getItem("token");
+      const res = await axios.get(`${API_BASE_URL}/api/forms/${formIdInput}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = res.data;
+      if (!data) return toast.error("Form not found.");
+
+      setFormName(data.formName || "");
+      setStartDate(data.startDate?.slice(0, 10) || "");
+      setEndDate(data.endDate?.slice(0, 10) || "");
+      setStatus(data.status || "Active");
+      setPaymentRequired(data.paymentRequired || false);
+      setPaymentDetails(data.paymentDetails || { amount: "", method: "" });
+      setFields(data.fields || []);
+
+      setEditFormId(formIdInput);
+      setIsEditing(true);
+      setShowFormIdModal(false); // Close the modal
+    } catch (error) {
+      console.error("Error fetching form for edit:", error);
+      toast.error("Failed to load form for editing.");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     const formData = {
       formName,
       startDate,
@@ -248,28 +271,25 @@ const [availableForms, setAvailableForms] = useState([]);
       paymentDetails: paymentRequired ? paymentDetails : null,
       fields,
     };
-  
+
     try {
       const token = sessionStorage.getItem("token");
-  
-      const res = await axios.post(
-        `${API_BASE_URL}/api/create-form`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-  
-      console.log("Form created successfully:", res.data);
-  
-      const formId = res.data.form?._id;
-  
-      if (formId) {
-        console.log("Form ID:", formId);
 
+      // If editing, send PUT request instead of POST
+      if (isEditing && editFormId) {
+        const res = await axios.put(
+          `${API_BASE_URL}/api/forms/${editFormId}/edit`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        console.log("Form updated successfully:", res.data);
+        toast.success("Form updated successfully");
         setFormName("");
         setStartDate("");
         setEndDate("");
@@ -277,17 +297,48 @@ const [availableForms, setAvailableForms] = useState([]);
         setPaymentRequired(false);
         setPaymentDetails({ amount: "", method: "" });
         setFields([]);
-  
-        openFormInNewTab(formId);
+        openFormInNewTab(editFormId);
+        setIsEditing(false);
+        setEditFormId(null);
       } else {
-        console.error("Form ID missing from the response.");
+        // Original create logic remains unchanged
+        const res = await axios.post(
+          `${API_BASE_URL}/api/create-form`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        console.log("Form created successfully:", res.data);
+        toast.success("Form created successfully");
+
+        const formId = res.data.form?._id;
+
+        if (formId) {
+          console.log("Form ID:", formId);
+
+          setFormName("");
+          setStartDate("");
+          setEndDate("");
+          setStatus("Active");
+          setPaymentRequired(false);
+          setPaymentDetails({ amount: "", method: "" });
+          setFields([]);
+
+          openFormInNewTab(formId);
+        } else {
+          console.error("Form ID missing from the response.");
+        }
       }
     } catch (error) {
-      console.error("Error creating form:", error);
-      alert("Failed to create form.");
+      console.error("Error submitting form:", error);
+      toast.error("Failed to submit form.");
     }
   };
-  
 
   const openFormInNewTab = (formId) => {
     const newTabUrl = `/user-form/${formId}`;
@@ -297,22 +348,24 @@ const [availableForms, setAvailableForms] = useState([]);
       alert("Popup blocked! Please allow popups for this site.");
     }
   };
+
+ const handleAddField = (insertIndex = fields.length) => {
+    const newField = {
+      label: "",
+      name: "",
+      type: "text",
+      required: false,
+      options: [],
+      optionLabels: [],
+      min: "",
+      max: "",
+    };
   
-  const handleAddField = () => {
-    setFields([
-      ...fields,
-      {
-        label: "",
-        name: "",
-        type: "text",
-        required: false,
-        options: [],
-        optionLabels: [],
-        min: "",
-        max: "",
-      },
-    ]);
+    const updatedFields = [...fields];
+    updatedFields.splice(insertIndex, 0, newField);
+    setFields(updatedFields);
   };
+  
 
   const handleRemoveField = (index) => {
     const updatedFields = fields.filter((_, i) => i !== index);
@@ -325,18 +378,6 @@ const [availableForms, setAvailableForms] = useState([]);
     setFields(newFields);
   };
 
-  // const fetchForm = async (formId) => {
-  //   try {
-  //     const res = await axios.get(`${API_BASE_URL}/api/forms/${formId}`);
-  //     console.log("Fetched form:", res.data);
-  //     setCreatedForm(res.data);
-  //     // setShowModal(true);
-  //     setAvailableForms(res.data.forms); 
-  //   } catch (error) {
-  //     console.error("Error fetching form:", error);
-  //   }
-  // };
-
   const fetchForm = async (formId) => {
     try {
       const res = await axios.get(`${API_BASE_URL}/api/forms/${formId}`);
@@ -345,7 +386,6 @@ const [availableForms, setAvailableForms] = useState([]);
       console.error("Error fetching form:", error);
     }
   };
-  
 
   const extendEndDate = async (formId, newEndDate) => {
     try {
@@ -415,7 +455,6 @@ const [availableForms, setAvailableForms] = useState([]);
               <tbody>
                 {uploadedFiles.map((submission) => (
                   <tr key={submission._id} className="hover:bg-gray-50">
-                    {/* <td className="p-2 border">{submission.responses?.name || "N/A"}</td> */}
                     <td className="p-2 border">
                       {(() => {
                         const formFields = submission.form?.fields || [];
@@ -472,50 +511,6 @@ const [availableForms, setAvailableForms] = useState([]);
           >
             Download Forms
           </button>
-
-          {/* <div className="flex flex-col md:flex-row gap-2 mb-4">
-
-          <select
-  className="border p-2 rounded mb-2"
-  value={selectedFormId}
-  onChange={(e) => setSelectedFormId(e.target.value)}
->
-  <option value="">Select Form</option>
-  {availableForms.map((form) => (
-    <option key={form._id} value={form._id}>
-      {form.formName}
-    </option>
-  ))}
-</select>
-
-
-  <select
-    onChange={(e) => setDateFilter(e.target.value)}
-    className="border p-2 rounded"
-  >
-    <option value="">Select Filter</option>
-    <option value="today">Today</option>
-    <option value="this_week">This Week</option>
-    <option value="this_month">This Month</option>
-    <option value="custom">Custom Range</option>
-  </select>
-
-  {dateFilter === "custom" && (
-    <div className="flex gap-2">
-      <input
-        type="date"
-        onChange={(e) => setCustomStart(e.target.value)}
-        className="border p-2 rounded"
-      />
-      <input
-        type="date"
-        onChange={(e) => setCustomEnd(e.target.value)}
-        className="border p-2 rounded"
-      />
-    </div>
-  )}
-</div> */}
-
 
           <button
             onClick={downloadSubmissionExcel}
@@ -773,14 +768,22 @@ const [availableForms, setAvailableForms] = useState([]);
                     </div>
                   </div>
                 )}
-
-                <button
-                  type="button"
-                  onClick={() => handleRemoveField(index)}
-                  className="bg-red-500 text-white px-4 py-2 rounded-lg"
-                >
-                  Remove Field
-                </button>
+                <div className="flex gap-4 mt-4 ">
+                  <button
+                    type="button"
+                    onClick={() => handleAddField(index + 1)}
+                    className="bg-green-500 text-white px-4 py-2 rounded-lg "
+                  >
+                    Add Field Below
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveField(index)}
+                    className="bg-red-500 text-white px-4 py-2 rounded-lg"
+                  >
+                    Remove Field
+                  </button>
+                </div>
               </div>
             ))}
 
@@ -792,16 +795,58 @@ const [availableForms, setAvailableForms] = useState([]);
               Add New Field
             </button>
           </div>
+          <div className="flex gap-4 mt-4">
+            <button
+              type="submit"
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+            >
+              {isEditing ? "Update Form" : "Create Form"}
+            </button>
 
-          <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 mt-4 rounded-lg cursor-pointer hover:bg-blue-600"
-          >
-            Create Form
-          </button>
+            <button
+              type="button"
+              onClick={() => setShowFormIdModal(true)}
+              className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600"
+            >
+              Edit Form
+            </button>
+          </div>
         </form>
-        <div className="mt-10 mb-10 bg-white bg-opacity-95 p-10 rounded-l-lg shadow-lg w-full max-w-lg max-h-[80vh] overflow-y-auto"
-        style={{ scrollbarWidth: "thin", scrollbarColor: "#ccc #f0f0f0" }}>
+        {showFormIdModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-xl">
+              <h2 className="text-xl font-bold mb-4 text-center">
+                Enter Form ID
+              </h2>
+              <input
+                type="text"
+                value={formIdInput}
+                onChange={(e) => setFormIdInput(e.target.value)}
+                placeholder="Enter Form ID"
+                className="border p-2 w-full mb-4"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setShowFormIdModal(false)}
+                  className="bg-gray-400 text-white px-4 py-2 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEditForm}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+                >
+                  Load Form
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div
+          className="mt-10 mb-10 bg-white bg-opacity-95 p-10 rounded-l-lg shadow-lg w-full max-w-lg max-h-[80vh] overflow-y-auto"
+          style={{ scrollbarWidth: "thin", scrollbarColor: "#ccc #f0f0f0" }}
+        >
           <h2 className="text-xl font-bold mb-2 text-center">
             Extend Form Expiry
           </h2>

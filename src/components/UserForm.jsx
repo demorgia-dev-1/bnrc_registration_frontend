@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { API_BASE_URL } from "../api/api";
 import { useRef } from "react";
+import { toast } from "react-toastify";
 
 const UserForm = ({ fields: initialFields }) => {
   const { formId } = useParams();
@@ -14,6 +15,8 @@ const UserForm = ({ fields: initialFields }) => {
   const [customOptions, setCustomOptions] = useState({});
   const [paymentInfo, setPaymentInfo] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadingBNRC, setLoadingBNRC] = useState(false);
+  const [slotCounts, setSlotCounts] = useState({});
 
   const fileInputRefs = useRef({});
 
@@ -92,6 +95,7 @@ const UserForm = ({ fields: initialFields }) => {
   const handleInputChange = (e) => {
     const { name, value, type, checked, files, options } = e.target;
     let newValue;
+
     if (type === "checkbox") {
       newValue = checked;
     } else if (type === "file") {
@@ -103,6 +107,24 @@ const UserForm = ({ fields: initialFields }) => {
     } else {
       newValue = value;
     }
+    if (/slot/i.test(name)) {
+      const normalizedValue = value?.trim().toLowerCase();
+      const normalizedCounts = Object.fromEntries(
+        Object.entries(slotCounts).map(([k, v]) => [k.trim().toLowerCase(), v])
+      );
+
+      console.log("Checking slot:", normalizedValue, normalizedCounts);
+
+      const slotCount = normalizedCounts[normalizedValue] || 0;
+      console.log("slot count:", slotCount);
+
+      if (slotCount >= 25) {
+        toast.warn(
+          `The slot "${value}" is already full. Please select another.`
+        );
+        return;
+      }
+    }
 
     setFormResponses((prev) => ({ ...prev, [name]: newValue }));
 
@@ -112,6 +134,7 @@ const UserForm = ({ fields: initialFields }) => {
       setSelectOthers((prev) => ({ ...prev, [name]: false }));
     }
   };
+
   const handleOtherInput = (name, value) => {
     const updatedForm = { ...form };
     const fieldIndex = updatedForm.fields.findIndex((f) => f.name === name);
@@ -147,7 +170,6 @@ const UserForm = ({ fields: initialFields }) => {
       const lowerName = field.name.toLowerCase();
       const isAadhaarField = /(aadhaar|aadhar|adhar|adhaar)/i.test(lowerName);
       const isPhoneField = /(contact|phone|mobile)/i.test(lowerName);
-      const isBNRCConfirmField = /(confirm).*bnrc/i.test(lowerName);
       const isFileUpload = value instanceof File;
 
       if (
@@ -206,8 +228,56 @@ const UserForm = ({ fields: initialFields }) => {
       }
     }
 
+    //  Slot capacity check
+    const slotFieldName = Object.keys(formResponses).find((k) =>
+      k.trim().toLowerCase().includes("slot")
+    );
+    const slotValue = formResponses[slotFieldName];
+
+    if (slotValue) {
+      const latestCounts = await fetchSlotCounts();
+      const normalizedCounts = Object.fromEntries(
+        Object.entries(latestCounts).map(([key, val]) => [
+          key.trim().toLowerCase(),
+          val,
+        ])
+      );
+      const normalizedSlot = slotValue.trim().toLowerCase();
+      const count = normalizedCounts[normalizedSlot] || 0;
+
+      const MAX_PER_SLOT = 26;
+      if (count >= MAX_PER_SLOT) {
+        errors["slot"] = "This slot is already full. Please choose another.";
+      }
+    }
+
     return errors;
   };
+
+  const fetchSlotCounts = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/slot-status/${formId}`);
+      const data = await res.json();
+      if (data.success) {
+        const counts = {};
+        data.slots.forEach((slot) => {
+          if (slot._id) {
+            const normalizedKey = slot._id.trim().toLowerCase();
+            counts[normalizedKey] = slot.count;
+          }
+        });
+
+        setSlotCounts(counts);
+        return counts;
+      }
+    } catch (err) {
+      console.error("Failed to fetch slot counts", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchSlotCounts();
+  }, []);
 
   const handleBNRCChange = async (e) => {
     const bnrc = e.target.value;
@@ -218,10 +288,13 @@ const UserForm = ({ fields: initialFields }) => {
 
     if (bnrc.length >= 5) {
       // optional length check
+      setLoadingBNRC(true);
       try {
+        console.log("BNRC entered:", bnrc);
+
         const { data } = await axios.post(
           `${API_BASE_URL}/api/get-details-by-bnrc`,
-          { bnrc }
+          { bnrc: userInputBNRC }
         );
         if (data.success) {
           const prefilledData = data.data;
@@ -230,10 +303,13 @@ const UserForm = ({ fields: initialFields }) => {
             ...prefilledData,
           }));
         } else {
-          console.log(data.message);
+          toast.info("No previous data found for this BNRC.");
         }
       } catch (err) {
-        console.error("Error fetching details:", err);
+        console.error("Error fetching BNRC details:", err);
+        toast.error("Error fetching previous details. Try again later.");
+      } finally {
+        setLoadingBNRC(false);
       }
     }
   };
@@ -242,7 +318,21 @@ const UserForm = ({ fields: initialFields }) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const validationErrors = await validateForm(); // await async validator
+    const normalizeSlot = (slot) => (slot ? slot.trim().toLowerCase() : "");
+
+    const latestCounts = await fetchSlotCounts();
+    console.log("latest counts", latestCounts);
+
+    const normalizedCounts = Object.fromEntries(
+      Object.entries(latestCounts).map(([key, value]) => [
+        normalizeSlot(key),
+        value,
+      ])
+    );
+
+    setSlotCounts(latestCounts);
+
+    const validationErrors = await validateForm();
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -266,6 +356,17 @@ const UserForm = ({ fields: initialFields }) => {
 
       formData.append("responses", JSON.stringify(responses));
 
+      const slotFieldName = Object.keys(responses).find((k) =>
+        k.trim().toLowerCase().includes("slot")
+      );
+      const selectedSlot = responses[slotFieldName];
+
+      const normalizedSlot = normalizeSlot(selectedSlot);
+      const slotCount = normalizedCounts[normalizedSlot] || 0;
+
+      console.log("Checking slot:", selectedSlot, latestCounts);
+      console.log("slot count:", slotCount);
+
       const response = await axios.post(
         `${API_BASE_URL}/api/submit-form/${form._id}`,
         formData,
@@ -278,7 +379,7 @@ const UserForm = ({ fields: initialFields }) => {
       );
 
       if (response.status === 201) {
-        alert("Form submitted successfully!");
+        toast.success("Form submitted successfully!");
         setFormResponses({});
         setErrors({});
         Object.values(fileInputRefs.current).forEach((input) => {
@@ -311,9 +412,11 @@ const UserForm = ({ fields: initialFields }) => {
       setIsSubmitting(false);
     } catch (error) {
       console.error("Submission failed:", error);
-      alert(
-        `Submission failed: ${error.response?.data?.message || error.message}`
-      );
+      const errorMsg =
+        error.response?.data?.message ||
+        error.message ||
+        "Something went wrong";
+      toast.error(`${errorMsg}`);
       setIsSubmitting(false);
     }
   };
@@ -346,7 +449,6 @@ const UserForm = ({ fields: initialFields }) => {
   };
 
   if (!formData) return <div>Loading...</div>;
-  
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-cover bg-center relative">
@@ -381,17 +483,22 @@ const UserForm = ({ fields: initialFields }) => {
                       <span className="text-xl text-red-500"> *</span>
                     )}
                   </label>
+                  {loadingBNRC && (
+                    <div style={{ fontSize: "0.8em", color: "#888" }}>
+                      Fetching details...
+                    </div>
+                  )}
 
                   {field.type === "text" && (
                     <input
                       type="text"
                       name={field.name}
                       value={formResponses[field.name] || ""}
-                      // onChange={handleInputChange}
                       onChange={(e) => {
                         handleInputChange(e);
-                        if (isBNRCField) {
-                          handleBNRCChange(e.target.value);
+                        const name = field.name.toLowerCase();
+                        if (/(bnrc.*(number|no|reg))/i.test(name)) {
+                          handleBNRCChange(e);
                         }
                       }}
                       placeholder={
@@ -556,12 +663,24 @@ const UserForm = ({ fields: initialFields }) => {
                         {[
                           ...(field.options || []),
                           ...(customOptions[field.name] || []),
-                        ].map((option, i) => (
-                          <option key={i} value={option.value || option}>
-                            {option.label || option}
-                          </option>
-                        ))}
-                        <option value="Other">Other</option>
+                        ].map((option, i) => {
+                          const value = option.value || option;
+                          const label = option.label || option;
+                          const isSlotField = /slot/i.test(field.name);
+                          const isFull =
+                            isSlotField &&
+                            slotCounts?.[value] >=
+                              (field.options.find((opt) => opt.value === value)
+                                ?.max || 25);
+                          return (
+                            <option key={i} value={value}>
+                              {label} {isFull ? "(Full)" : ""}
+                            </option>
+                          );
+                        })}
+                        {!/slot/i.test(field.name) && (
+                          <option value="Other">Other</option>
+                        )}
                       </select>
                       {selectOthers[field.name] && (
                         <input

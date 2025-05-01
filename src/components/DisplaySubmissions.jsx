@@ -6,7 +6,8 @@ const DisplaySubmissions = () => {
   const [submissions, setSubmissions] = useState([]);
 
   useEffect(() => {
-    axios.get(`${API_BASE_URL}/api/submissions`)
+    axios
+      .get(`${API_BASE_URL}/api/submissions`)
       .then((res) => setSubmissions(res.data))
       .catch((err) => console.error("Error:", err));
   }, []);
