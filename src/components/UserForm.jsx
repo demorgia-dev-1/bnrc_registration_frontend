@@ -6,7 +6,7 @@ import { useRef } from "react";
 import { toast } from "react-toastify";
 
 const UserForm = ({ fields: initialFields }) => {
-  const { formId } = useParams();
+  const { formId, submissionId } = useParams();
   const [formData, setFormData] = useState({});
   const [form, setForm] = useState(null);
   const [formResponses, setFormResponses] = useState({});
@@ -59,6 +59,57 @@ const UserForm = ({ fields: initialFields }) => {
 
     loadForm();
   }, [formId, initialFields]);
+
+  useEffect(() => {
+    if (!submissionId) return;
+  
+    const launchPayment = async () => {
+      try {
+        const { data } = await axios.get(`${API_BASE_URL}/api/submissions/${submissionId}`);
+  
+        if (!data.paymentDetails?.order_id) {
+          toast.error("Invalid or expired payment link.");
+          return;
+        }
+  
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          amount: data.paymentDetails.amount,
+          currency: "INR",
+          name: "Form Submission",
+          description: "Form Submission Payment",
+          order_id: data.paymentDetails.order_id,
+          handler: async (response) => {
+            try {
+              await axios.post(`${API_BASE_URL}/api/payment/payment-success/${submissionId}`, {
+                payment_id: response.razorpay_payment_id,
+                order_id: response.razorpay_order_id,
+                signature: response.razorpay_signature,
+              });
+              toast.success("Payment successful!");
+            } catch (err) {
+              console.error("Payment verification failed", err);
+              toast.error("Payment verification failed.");
+            }
+          },
+          theme: { color: "#3399cc" },
+          prefill: {
+            name: data.responses?.name || "",
+            email: data.responses?.email || "",
+          },
+        };
+  
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+      } catch (err) {
+        console.error("Failed to initiate payment:", err);
+        toast.error("Could not load payment.");
+      }
+    };
+  
+    launchPayment();
+  }, [submissionId]);
+  
 
   useEffect(() => {
     if (!formResponses.sameAsPermanent) return;
@@ -256,6 +307,11 @@ const UserForm = ({ fields: initialFields }) => {
   };
 
   const fetchSlotCounts = async () => {
+    if (!formId) {
+      console.error("Form ID is missing, cannot fetch slot counts.");
+      return;
+    }
+  
     try {
       const res = await fetch(`${API_BASE_URL}/api/slot-status/${formId}`);
       const data = await res.json();
@@ -277,8 +333,12 @@ const UserForm = ({ fields: initialFields }) => {
   };
 
   useEffect(() => {
-    fetchSlotCounts();
-  }, []);
+    if (formId) {
+      console.log("formId before calling fetchSlotCounts:", formId);
+      fetchSlotCounts();
+    }
+  }, [formId]);
+  
 
   const handleBNRCChange = async (e) => {
     const bnrc = e.target.value;

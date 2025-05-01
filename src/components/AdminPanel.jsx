@@ -346,24 +346,39 @@ const AdminPanel = () => {
       alert("Popup blocked! Please allow popups for this site.");
     }
   };
-
- const handleAddField = (insertIndex = fields.length) => {
-    const newField = {
-      label: "",
-      name: "",
-      type: "text",
-      required: false,
-      options: [],
-      optionLabels: [],
-      min: "",
-      max: "",
-    };
-  
-    const updatedFields = [...fields];
-    updatedFields.splice(insertIndex, 0, newField);
-    setFields(updatedFields);
+ 
+const handleAddField = () => {
+  const newField = {
+    label: "",
+    name: "",
+    type: "text",
+    required: false,
+    options: [],
+    optionLabels: [],
+    min: "",
+    max: "",
   };
-  
+
+  setFields([...fields, newField]);
+};
+
+const handleAddFieldBelow = (index) => {
+  const newField = {
+    label: "",
+    name: "",
+    type: "text",
+    required: false,
+    options: [],
+    optionLabels: [],
+    min: "",
+    max: "",
+  };
+
+  const updatedFields = [...fields];
+  updatedFields.splice(index + 1, 0, newField);
+  setFields(updatedFields);
+};
+
 
   const handleRemoveField = (index) => {
     const updatedFields = fields.filter((_, i) => i !== index);
@@ -398,10 +413,14 @@ const AdminPanel = () => {
           },
         }
       );
-      alert("Form expiry date extended successfully.");
+      toast.success("Form expiry date extended successfully.");
       fetchForm(formId);
+      setFormIdInput("");
+      setExtendDate("");
+
     } catch (error) {
       console.error("Failed to extend end date:", error);
+      toast.error(error);
     }
   };
 
@@ -769,7 +788,7 @@ const AdminPanel = () => {
                 <div className="flex gap-4 mt-4 ">
                   <button
                     type="button"
-                    onClick={() => handleAddField(index + 1)}
+                    onClick={() => handleAddFieldBelow(index)}
                     className="bg-green-500 text-white px-4 py-2 rounded-lg "
                   >
                     Add Field Below
