@@ -4,6 +4,7 @@ import AdminPanel from "./components/AdminPanel";
 import Login from "./components/Login";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import CompletePayment from "./components/CompletePayment";
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/admin-panel" element={<AdminPanel />} />
         <Route path="/user-form/:formId" element={<UserForm />} />
+        <Route path="/complete-payment" element= {<CompletePayment />} />
       </Routes>
     </>
   );

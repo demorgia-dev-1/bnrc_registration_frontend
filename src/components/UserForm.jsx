@@ -381,6 +381,9 @@ const UserForm = ({ fields: initialFields }) => {
 
       if (response.status === 201) {
         toast.success("Form submitted successfully!");
+        if (response.data.paymentRequired) {
+          toast.info("A payment link has been sent to your email.");
+        }
         setFormResponses({});
         setErrors({});
         Object.values(fileInputRefs.current).forEach((input) => {
