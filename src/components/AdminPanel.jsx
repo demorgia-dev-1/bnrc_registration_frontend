@@ -158,7 +158,6 @@ const AdminPanel = () => {
   const downloadFormExcel = async () => {
     try {
       const token = sessionStorage.getItem("token");
-      console.log("Token:", token); // debug
 
       const response = await axios.get(
         `${API_BASE_URL}/api/download/forms-excel`,
@@ -202,7 +201,6 @@ const AdminPanel = () => {
   const downloadSubmissionExcel = async () => {
     try {
       const token = sessionStorage.getItem("token");
-      console.log("Token:", token); // debug
 
       const response = await axios.get(
         `${API_BASE_URL}/api/download/submissions-excel`,

@@ -136,6 +136,7 @@ const UserForm = ({ fields: initialFields }) => {
   };
 
   const handleOtherInput = (name, value) => {
+    if (!value.trim()) return; // Ignore empty input
     const updatedForm = { ...form };
     const fieldIndex = updatedForm.fields.findIndex((f) => f.name === name);
 
@@ -496,10 +497,10 @@ const UserForm = ({ fields: initialFields }) => {
                       value={formResponses[field.name] || ""}
                       onChange={(e) => {
                         handleInputChange(e);
-                        const name = field.name.toLowerCase();
-                        if (/(bnrc.*(number|no|reg))/i.test(name)) {
-                          handleBNRCChange(e);
-                        }
+                        // const name = field.name.toLowerCase();
+                        // if (/(bnrc.*(number|no|reg))/i.test(name)) {
+                        //   handleBNRCChange(e);
+                        // }
                       }}
                       placeholder={
                         field.placeholder ||
@@ -690,6 +691,12 @@ const UserForm = ({ fields: initialFields }) => {
                           onBlur={(e) =>
                             handleOtherInput(field.name, e.target.value)
                           }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault(); // ✅ Prevent page refresh
+                              handleOtherInput(field.name, e.target.value);
+                            }
+                          }}
                           autoFocus
                         />
                       )}
