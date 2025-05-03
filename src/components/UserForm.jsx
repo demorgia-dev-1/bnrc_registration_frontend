@@ -62,16 +62,18 @@ const UserForm = ({ fields: initialFields }) => {
 
   useEffect(() => {
     if (!submissionId) return;
-  
+
     const launchPayment = async () => {
       try {
-        const { data } = await axios.get(`${API_BASE_URL}/api/submissions/${submissionId}`);
-  
+        const { data } = await axios.get(
+          `${API_BASE_URL}/api/submissions/${submissionId}`
+        );
+
         if (!data.paymentDetails?.order_id) {
           toast.error("Invalid or expired payment link.");
           return;
         }
-  
+
         const options = {
           key: import.meta.env.VITE_RAZORPAY_KEY_ID,
           amount: data.paymentDetails.amount,
@@ -81,11 +83,14 @@ const UserForm = ({ fields: initialFields }) => {
           order_id: data.paymentDetails.order_id,
           handler: async (response) => {
             try {
-              await axios.post(`${API_BASE_URL}/api/payment/payment-success/${submissionId}`, {
-                payment_id: response.razorpay_payment_id,
-                order_id: response.razorpay_order_id,
-                signature: response.razorpay_signature,
-              });
+              await axios.post(
+                `${API_BASE_URL}/api/payment/payment-success/${submissionId}`,
+                {
+                  payment_id: response.razorpay_payment_id,
+                  order_id: response.razorpay_order_id,
+                  signature: response.razorpay_signature,
+                }
+              );
               toast.success("Payment successful!");
             } catch (err) {
               console.error("Payment verification failed", err);
@@ -98,7 +103,7 @@ const UserForm = ({ fields: initialFields }) => {
             email: data.responses?.email || "",
           },
         };
-  
+
         const razorpay = new window.Razorpay(options);
         razorpay.open();
       } catch (err) {
@@ -106,10 +111,9 @@ const UserForm = ({ fields: initialFields }) => {
         toast.error("Could not load payment.");
       }
     };
-  
+
     launchPayment();
   }, [submissionId]);
-  
 
   useEffect(() => {
     if (!formResponses.sameAsPermanent) return;
@@ -187,7 +191,7 @@ const UserForm = ({ fields: initialFields }) => {
   };
 
   const handleOtherInput = (name, value) => {
-    if (!value.trim()) return; // Ignore empty input
+    if (!value.trim()) return;
     const updatedForm = { ...form };
     const fieldIndex = updatedForm.fields.findIndex((f) => f.name === name);
 
@@ -255,14 +259,34 @@ const UserForm = ({ fields: initialFields }) => {
           console.error("Phone uniqueness check failed:", err);
         }
       }
+      // Aadhar uniqueness check
 
       if (isAadhaarField && !isFileUpload && value) {
         if (!aadhaarRegex.test(value)) {
           errors[field.name] = "Aadhaar must be a 12-digit number.";
+        } else {
+          try {
+            const { data } = await axios.post(
+              `${API_BASE_URL}/api/check-aadhar`,
+              {
+                formId: form?._id,
+                aadhar: value,
+              }
+            );
+
+            if (data.exists) {
+              errors[field.name] =
+                "This Aadhaar number has already been used for this form.";
+            }
+          } catch (err) {
+            console.error("Aadhaar uniqueness check failed:", err);
+          }
         }
       }
+
       const isBnrcField = /(bnrc.*(number|no|reg))/i.test(lowerName);
 
+      // bnrc uniqueness check
       if (isBnrcField && value && !isFileUpload) {
         try {
           const { data } = await axios.post(`${API_BASE_URL}/api/check-bnrc`, {
@@ -311,7 +335,7 @@ const UserForm = ({ fields: initialFields }) => {
       console.error("Form ID is missing, cannot fetch slot counts.");
       return;
     }
-  
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/slot-status/${formId}`);
       const data = await res.json();
@@ -338,7 +362,6 @@ const UserForm = ({ fields: initialFields }) => {
       fetchSlotCounts();
     }
   }, [formId]);
-  
 
   const handleBNRCChange = async (e) => {
     const bnrc = e.target.value;
@@ -407,9 +430,21 @@ const UserForm = ({ fields: initialFields }) => {
       formData.append("form", form._id);
 
       const responses = {};
+
       Object.entries(formResponses).forEach(([fieldName, value]) => {
+        if (typeof value === "string") {
+          value = value.trim();
+          if (
+            /bnrc/i.test(fieldName) ||
+            /phone/i.test(fieldName) ||
+            /aadhaar/i.test(fieldName)
+          ) {
+            value = value.toLowerCase(); // optional, if backend does it
+          }
+        }
+
         if (value instanceof File) {
-          formData.append("files", value);
+          formData.append(fieldName, value);
         } else {
           responses[fieldName] = value;
         }
@@ -560,10 +595,6 @@ const UserForm = ({ fields: initialFields }) => {
                       value={formResponses[field.name] || ""}
                       onChange={(e) => {
                         handleInputChange(e);
-                        // const name = field.name.toLowerCase();
-                        // if (/(bnrc.*(number|no|reg))/i.test(name)) {
-                        //   handleBNRCChange(e);
-                        // }
                       }}
                       placeholder={
                         field.placeholder ||

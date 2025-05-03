@@ -5,24 +5,30 @@ import { API_BASE_URL } from "../api/api";
 import { toast } from "react-toastify";
 
 const Modal = ({ show, onClose, data, children }) => {
+  const [previewImage, setPreviewImage] = useState(null);
+
   if (!show) return null;
 
-  if (data) {
-    const formFields = data.form?.fields || [];
-    const responseMap = data.responses || {};
-    const uploadedFiles = data?.uploadedFiles || [];
+  const formFields = data?.form?.fields || [];
+  const responseMap = data?.responses || {};
+  const uploadedFiles = data?.uploadedFiles || [];
 
-    const fileMap = {};
-    uploadedFiles.forEach((file) => {
-      if (!fileMap[file.fieldName]) fileMap[file.fieldName] = [];
-      fileMap[file.fieldName].push(file);
-    });
+  const fileMap = {};
+  uploadedFiles.forEach((file) => {
+    if (!fileMap[file.fieldName]) fileMap[file.fieldName] = [];
+    fileMap[file.fieldName].push(file);
+  });
 
-    return (
+  return (
+    <>
       <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
         <div className="bg-white rounded-lg shadow-xl w-11/12 md:w-4/5 lg:w-2/3 max-h-[90vh] overflow-y-auto p-6">
           <div className="flex justify-between mb-4">
-            <h2 className="text-xl font-bold">Form: {data.form?.formName}</h2>
+            <h2 className="text-xl font-bold">
+              {data?.form?.formName
+                ? `Form: ${data.form.formName}`
+                : "Uploaded Files"}
+            </h2>
             <button
               onClick={onClose}
               className="text-red-600 text-2xl font-bold"
@@ -31,71 +37,74 @@ const Modal = ({ show, onClose, data, children }) => {
             </button>
           </div>
 
-          <table className="w-full border border-gray-300 mb-4">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="p-2 border">Field</th>
-                <th className="p-2 border">Response</th>
-              </tr>
-            </thead>
-            <tbody>
-              {formFields.map((field) => (
-                <tr key={field.name}>
-                  <td className="border p-2">{field.label}</td>
-                  <td className="border p-2">
-                    {responseMap[field.name] &&
-                    responseMap[field.name].toString().trim()
-                      ? responseMap[field.name]
-                      : "N/A"}
-                  </td>
+          {data?.form ? (
+            <table className="w-full border border-gray-300 mb-4">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="p-2 border">Field</th>
+                  <th className="p-2 border">Response</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <h3 className="text-lg font-semibold mb-2">Uploaded Files:</h3>
-          {data.uploadedFiles?.length > 0 ? (
-            <ul className="space-y-1">
-              {data.uploadedFiles.map((file, idx) => (
-                <li
-                  key={idx}
-                  className="flex justify-between bg-gray-100 p-2 rounded"
-                >
-                  <span>{file.fieldname}</span>
-                  <a
-                    href={`${API_BASE_URL}/api/download/${file.fileId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="py-1 px-4 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 cursor-pointer"
-                  >
-                    Download
-                  </a>
-                </li>
-              ))}
-            </ul>
+              </thead>
+              <tbody>
+                {formFields.map((field) => {
+                  const value = responseMap[field.name];
+                  const files = fileMap[field.name];
+                  return (
+                    <tr key={field.name}>
+                      <td className="border p-2">{field.label}</td>
+                      <td className="border p-2">
+                        {value && typeof value === "string" && (
+                          <div className="mb-2">{value}</div>
+                        )}
+                        {files?.length > 0 && (
+                          <div className="flex gap-3 flex-wrap">
+                            {files.map((file, idx) => (
+                              <img
+                                key={idx}
+                                src={`${API_BASE_URL}/api/download/${file._id}`}
+                                alt={file.originalName || "Uploaded file"}
+                                className="w-32 h-32 object-cover border rounded cursor-pointer"
+                                onClick={() =>
+                                  setPreviewImage(
+                                    `${API_BASE_URL}/api/download/${file._id}`
+                                  )
+                                }
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {!value && (!files || files.length === 0) && "N/A"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           ) : (
-            <p>No files uploaded.</p>
+            children
           )}
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
-      <div className="bg-white rounded-lg shadow-xl w-11/12 md:w-4/5 lg:w-2/3 max-h-[90vh] overflow-y-auto p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Uploaded Files</h2>
-          <button
-            onClick={onClose}
-            className="text-red-600 text-xl font-bold hover:text-red-800"
-          >
-            ×
-          </button>
+      {previewImage && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center">
+          <div className="relative">
+            <button
+              onClick={() => setPreviewImage(null)}
+              className="absolute top-2 right-2 text-white bg-black bg-opacity-50 hover:bg-opacity-80 rounded-full text-xl px-3 py-1 cursor-pointer"
+              title="Close Preview"
+            >
+              ×
+            </button>
+            <img
+              src={previewImage}
+              alt="Full Preview"
+              className="max-w-full max-h-[90vh] rounded-lg"
+            />
+          </div>
         </div>
-        {children}
-      </div>
-    </div>
+      )}
+    </>
   );
 };
 
@@ -121,8 +130,33 @@ const AdminPanel = () => {
   const [formIdInput, setFormIdInput] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editFormId, setEditFormId] = useState(null);
+  const [forms, setForms] = useState([]);
+  const [selectedFormId, setSelectedFormId] = useState("");
 
   const navigate = useNavigate();
+
+  const filteredSubmissions = uploadedFiles.filter(
+    (submission) => submission.form?._id === selectedFormId
+  );
+
+  useEffect(() => {
+    const fetchForms = async () => {
+      try {
+        const token = sessionStorage.getItem("token");
+        const res = await fetch(`${API_BASE_URL}/api/forms`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await res.json();
+        setForms(data);
+      } catch (err) {
+        console.error("Failed to fetch forms", err);
+      }
+    };
+
+    fetchForms();
+  }, []);
 
   useEffect(() => {
     const fetchSubmissions = async () => {
@@ -198,28 +232,35 @@ const AdminPanel = () => {
     }
   };
 
-  const downloadSubmissionExcel = async () => {
+  const downloadSubmissionExcel = async (formId) => {
     try {
       const token = sessionStorage.getItem("token");
-
-      const response = await axios.get(
-        `${API_BASE_URL}/api/download/submissions-excel`,
+      const response = await fetch(
+        `${API_BASE_URL}/api/download/submissions-excel?formId=${formId}`,
         {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: "blob",
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
-      const blob = new Blob([response.data], {
-        type: response.headers["content-type"],
-      });
-      const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(blob);
-      link.download = "submissions.xlsx";
-      link.click();
+      if (!response.ok) {
+        throw new Error("Failed to download Excel");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `submissions-${formId}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Download failed:", error);
-      alert("Failed to download submissions");
+      console.error("Download error:", error);
+      alert("Failed to download submissions.");
     }
   };
 
@@ -250,7 +291,7 @@ const AdminPanel = () => {
 
       setEditFormId(formIdInput);
       setIsEditing(true);
-      setShowFormIdModal(false); // Close the modal
+      setShowFormIdModal(false);
     } catch (error) {
       console.error("Error fetching form for edit:", error);
       toast.error("Failed to load form for editing.");
@@ -273,7 +314,6 @@ const AdminPanel = () => {
     try {
       const token = sessionStorage.getItem("token");
 
-      // If editing, send PUT request instead of POST
       if (isEditing && editFormId) {
         const res = await axios.put(
           `${API_BASE_URL}/api/forms/${editFormId}/edit`,
@@ -299,7 +339,6 @@ const AdminPanel = () => {
         setIsEditing(false);
         setEditFormId(null);
       } else {
-        // Original create logic remains unchanged
         const res = await axios.post(
           `${API_BASE_URL}/api/create-form`,
           formData,
@@ -346,39 +385,38 @@ const AdminPanel = () => {
       alert("Popup blocked! Please allow popups for this site.");
     }
   };
- 
-const handleAddField = () => {
-  const newField = {
-    label: "",
-    name: "",
-    type: "text",
-    required: false,
-    options: [],
-    optionLabels: [],
-    min: "",
-    max: "",
+
+  const handleAddField = () => {
+    const newField = {
+      label: "",
+      name: "",
+      type: "text",
+      required: false,
+      options: [],
+      optionLabels: [],
+      min: "",
+      max: "",
+    };
+
+    setFields([...fields, newField]);
   };
 
-  setFields([...fields, newField]);
-};
+  const handleAddFieldBelow = (index) => {
+    const newField = {
+      label: "",
+      name: "",
+      type: "text",
+      required: false,
+      options: [],
+      optionLabels: [],
+      min: "",
+      max: "",
+    };
 
-const handleAddFieldBelow = (index) => {
-  const newField = {
-    label: "",
-    name: "",
-    type: "text",
-    required: false,
-    options: [],
-    optionLabels: [],
-    min: "",
-    max: "",
+    const updatedFields = [...fields];
+    updatedFields.splice(index + 1, 0, newField);
+    setFields(updatedFields);
   };
-
-  const updatedFields = [...fields];
-  updatedFields.splice(index + 1, 0, newField);
-  setFields(updatedFields);
-};
-
 
   const handleRemoveField = (index) => {
     const updatedFields = fields.filter((_, i) => i !== index);
@@ -417,7 +455,6 @@ const handleAddFieldBelow = (index) => {
       fetchForm(formId);
       setFormIdInput("");
       setExtendDate("");
-
     } catch (error) {
       console.error("Failed to extend end date:", error);
       toast.error(error);
@@ -449,16 +486,32 @@ const handleAddFieldBelow = (index) => {
         className="w-full h-full object-cover absolute inset-0"
       />
       <div className="absolute top-0 right-0 h-full w-1/2 flex flex-col items-center justify-center z-10">
-        <div className="mt-10 bg-white bg-opacity-95 p-5 rounded-lg shadow-lg w-full max-w-lg max-h-[80vh] flex gap-4">
+        <div className="mt-5 p-5 rounded-lg w-full max-w-lg flex  justify-between gap-2">
+          <div className=" py-1 px-4 bg-blue-700 text-white rounded-lg shadow-xl hover:bg-blue-800 cursor-pointer">
+            <select
+              id="formSelect"
+              value={selectedFormId}
+              onChange={(e) => setSelectedFormId(e.target.value)}
+              className="py-2 px-1 cursor-pointer focus:outline-none"
+            >
+              <option value="" className="text-black">
+                Select a form
+              </option>
+              {forms.map((form) => (
+                <option key={form._id} value={form._id} className="text-black">
+                  {form.formName}
+                </option>
+              ))}
+            </select>
+          </div>
           {/* Show All Submissions Modal */}
           <button
             onClick={() => setShowListModal(true)}
-            className="py-1 px-4 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 cursor-pointer"
+            className="py-1 px-4 bg-blue-700 text-white rounded-lg shadow-xl hover:bg-blue-800 cursor-pointer"
           >
             Show Submissions
           </button>
 
-          {/* List Modal */}
           <Modal show={showListModal} onClose={() => setShowListModal(false)}>
             <table className="min-w-full border border-gray-300">
               <thead>
@@ -470,44 +523,58 @@ const handleAddFieldBelow = (index) => {
                 </tr>
               </thead>
               <tbody>
-                {uploadedFiles.map((submission) => (
-                  <tr key={submission._id} className="hover:bg-gray-50">
-                    <td className="p-2 border">
-                      {(() => {
-                        const formFields = submission.form?.fields || [];
-                        const candidateField = formFields.find(
-                          (f) =>
-                            f.label.toLowerCase().includes("name") ||
-                            f.name.toLowerCase().includes("name")
-                        );
-                        const candidateKey = candidateField?.name;
-                        return candidateKey
-                          ? submission.responses?.[candidateKey] || "N/A"
-                          : "N/A";
-                      })()}
-                    </td>
-
-                    <td className="p-2 border">{submission._id}</td>
-                    <td className="p-2 border">
-                      {submission.uploadedFiles?.length > 0
-                        ? submission.uploadedFiles.map((file, i) => (
-                            <div key={i}>{file.originalName}</div>
-                          ))
-                        : "No File"}
-                    </td>
-                    <td className="p-2 border">
-                      <button
-                        onClick={() => {
-                          setSelectedSubmission(submission);
-                          setShowDetailModal(true);
-                        }}
-                        className="py-1 px-4 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600 cursor-pointer"
-                      >
-                        View
-                      </button>
+                {!selectedFormId ? (
+                  <tr>
+                    <td colSpan="4" className="text-center p-4 text-gray-500">
+                      Please select a form to view submissions.
                     </td>
                   </tr>
-                ))}
+                ) : filteredSubmissions.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="text-center p-4 text-gray-500">
+                      No submissions found for this form.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredSubmissions.map((submission) => (
+                    <tr key={submission._id} className="hover:bg-gray-50">
+                      <td className="p-2 border">
+                        {(() => {
+                          const formFields = submission.form?.fields || [];
+                          const candidateField = formFields.find(
+                            (f) =>
+                              f.label.toLowerCase().includes("name") ||
+                              f.name.toLowerCase().includes("name")
+                          );
+                          const candidateKey = candidateField?.name;
+                          return candidateKey
+                            ? submission.responses?.[candidateKey] || "N/A"
+                            : "N/A";
+                        })()}
+                      </td>
+
+                      <td className="p-2 border">{submission._id}</td>
+                      <td className="p-2 border">
+                        {submission.uploadedFiles?.length > 0
+                          ? submission.uploadedFiles.map((file, i) => (
+                              <div key={i}>{file.originalName}</div>
+                            ))
+                          : "No File"}
+                      </td>
+                      <td className="p-2 border">
+                        <button
+                          onClick={() => {
+                            setSelectedSubmission(submission);
+                            setShowDetailModal(true);
+                          }}
+                          className="py-1 px-4 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600"
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </Modal>
@@ -524,19 +591,19 @@ const handleAddFieldBelow = (index) => {
 
           <button
             onClick={downloadFormExcel}
-            className="py-1 px-4 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600 cursor-pointer"
+            className="py-2 px-4 bg-blue-700 text-white rounded-lg shadow-xl hover:bg-blue-800 cursor-pointer"
           >
             Download Forms
           </button>
 
           <button
-            onClick={downloadSubmissionExcel}
-            className="py-1 px-4 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600 cursor-pointer"
+            // onClick={downloadSubmissionExcel}
+            onClick={() => downloadSubmissionExcel(selectedFormId)}
+            className="py-2 px-4 bg-blue-700 text-white rounded-lg shadow-xl hover:bg-blue-800 cursor-pointer"
           >
             Download Submissions
           </button>
         </div>
-
         <form
           onSubmit={handleSubmit}
           className="mt-10 bg-white bg-opacity-95 p-10 rounded-l-lg shadow-lg w-full max-w-lg max-h-[80vh] overflow-y-auto"
