@@ -9,7 +9,10 @@ const Modal = ({ show, onClose, data, children }) => {
 
   if (!show) return null;
 
-  const formFields = data?.form?.fields || [];
+  // const formFields = data?.form?.fields || [];
+  const formFields = (data?.form?.sections || []).flatMap(
+    (section) => section.fields || []
+  );
   const responseMap = data?.responses || {};
   const uploadedFiles = data?.uploadedFiles || [];
 
@@ -121,7 +124,6 @@ const AdminPanel = () => {
   });
   const [fields, setFields] = useState([]);
   const [createdForm, setCreatedForm] = useState(null);
-
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [showListModal, setShowListModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -132,6 +134,7 @@ const AdminPanel = () => {
   const [editFormId, setEditFormId] = useState(null);
   const [forms, setForms] = useState([]);
   const [selectedFormId, setSelectedFormId] = useState("");
+  const [sections, setSections] = useState([{ name: "", fields: [] }]);
 
   const navigate = useNavigate();
 
@@ -287,7 +290,9 @@ const AdminPanel = () => {
       setStatus(data.status || "Active");
       setPaymentRequired(data.paymentRequired || false);
       setPaymentDetails(data.paymentDetails || { amount: "", method: "" });
-      setFields(data.fields || []);
+
+      setFields(data.fields || []); // if you still need it
+      setSections(data.sections || []); // <--- ADD THIS LINE to load sections for editing
 
       setEditFormId(formIdInput);
       setIsEditing(true);
@@ -308,7 +313,8 @@ const AdminPanel = () => {
       status,
       paymentRequired,
       paymentDetails: paymentRequired ? paymentDetails : null,
-      fields,
+      sections,
+      // fields,
     };
 
     try {
@@ -386,10 +392,31 @@ const AdminPanel = () => {
     }
   };
 
-  const handleAddField = () => {
+  const handleAddSection = () => {
+    setSections([
+      ...sections,
+      {
+        sectionTitle: "",
+        fields: [],
+      },
+    ]);
+  };
+
+  const handleRemoveSection = (index) => {
+    const updated = [...sections];
+    updated.splice(index, 1);
+    setSections(updated);
+  };
+
+  const handleSectionChange = (sectionIndex, field, value) => {
+    const updatedSections = [...sections];
+    updatedSections[sectionIndex][field] = value;
+    setSections(updatedSections);
+  };
+
+  const handleAddFieldBelow = (sectionIndex, fieldIndex) => {
     const newField = {
       label: "",
-      name: "",
       type: "text",
       required: false,
       options: [],
@@ -398,11 +425,14 @@ const AdminPanel = () => {
       max: "",
     };
 
-    setFields([...fields, newField]);
+    const updated = [...sections];
+    updated[sectionIndex].fields.splice(fieldIndex + 1, 0, newField);
+    setSections(updated);
   };
 
-  const handleAddFieldBelow = (index) => {
-    const newField = {
+  const handleAddField = (sectionIndex) => {
+    const updated = [...sections];
+    updated[sectionIndex].fields.push({
       label: "",
       name: "",
       type: "text",
@@ -411,22 +441,20 @@ const AdminPanel = () => {
       optionLabels: [],
       min: "",
       max: "",
-    };
-
-    const updatedFields = [...fields];
-    updatedFields.splice(index + 1, 0, newField);
-    setFields(updatedFields);
+    });
+    setSections(updated);
   };
 
-  const handleRemoveField = (index) => {
-    const updatedFields = fields.filter((_, i) => i !== index);
-    setFields(updatedFields);
+  const handleFieldChange = (sectionIndex, fieldIndex, key, value) => {
+    const updated = [...sections];
+    updated[sectionIndex].fields[fieldIndex][key] = value;
+    setSections(updated);
   };
 
-  const handleFieldChange = (index, field, value) => {
-    const newFields = [...fields];
-    newFields[index][field] = value;
-    setFields(newFields);
+  const handleRemoveField = (sectionIndex, fieldIndex) => {
+    const updated = [...sections];
+    updated[sectionIndex].fields.splice(fieldIndex, 1);
+    setSections(updated);
   };
 
   const fetchForm = async (formId) => {
@@ -540,7 +568,13 @@ const AdminPanel = () => {
                     <tr key={submission._id} className="hover:bg-gray-50">
                       <td className="p-2 border">
                         {(() => {
-                          const formFields = submission.form?.fields || [];
+                          {
+                            /* const formFields = submission.form?.fields || []; */
+                          }
+                          const formFields =
+                            submission.form?.sections?.flatMap(
+                              (section) => section.fields
+                            ) || [];
                           const candidateField = formFields.find(
                             (f) =>
                               f.label.toLowerCase().includes("name") ||
@@ -645,7 +679,6 @@ const AdminPanel = () => {
               className="border p-2 w-full"
             />
           </div>
-
           <div className="mb-4">
             <label className="block font-bold">Status:</label>
             <select
@@ -701,31 +734,64 @@ const AdminPanel = () => {
               </div>
             </div>
           )}
-          <div className="mb-4">
-            {fields.map((field, index) => (
-              <div key={index} className="border p-4 rounded-lg mb-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block font-medium">Field Name:</label>
+
+          {/* Sections */}
+          <div className="mt-6 space-y-6">
+            {sections.map((section, sectionIndex) => (
+              <div key={sectionIndex} className="border p-4 rounded">
+                <div className="flex justify-between items-center">
+                  <input
+                    className="w-full border p-2 mb-2 capitalize"
+                    placeholder="Section Title"
+                    value={section.sectionTitle}
+                    onChange={(e) =>
+                      handleSectionChange(
+                        sectionIndex,
+                        "sectionTitle",
+                        e.target.value
+                      )
+                    }
+                    required
+                  />
+
+                  <button
+                    type="button"
+                    className="bg-red-500 text-white px-4 rounded-lg cursor-pointer ml-2 hover:bg-red-600"
+                    onClick={() => handleRemoveSection(sectionIndex)}
+                  >
+                    Remove Section
+                  </button>
+                </div>
+                {/* Fields */}
+                {section.fields.map((field, fieldIndex) => (
+                  <div
+                    key={fieldIndex}
+                    className="border p-3 mb-2 rounded bg-gray-50"
+                  >
                     <input
-                      type="text"
+                      className="w-full border p-2 mb-2"
+                      placeholder="Field Label"
                       value={field.label}
                       onChange={(e) =>
-                        handleFieldChange(index, "label", e.target.value)
+                        handleFieldChange(
+                          sectionIndex,
+                          fieldIndex,
+                          "label",
+                          e.target.value
+                        )
                       }
-                      required
-                      className="border p-2 w-full"
                     />
-                  </div>
-
-                  <div>
-                    <label className="block font-medium">Field Type:</label>
                     <select
+                      className="w-full border p-2 mb-2"
                       value={field.type}
                       onChange={(e) =>
-                        handleFieldChange(index, "type", e.target.value)
+                        handleFieldChange(
+                          sectionIndex,
+                          fieldIndex,
+                          "type",
+                          e.target.value
+                        )
                       }
-                      className="border p-2 w-full"
                     >
                       {fieldTypes.map((type) => (
                         <option key={type} value={type}>
@@ -733,152 +799,155 @@ const AdminPanel = () => {
                         </option>
                       ))}
                     </select>
-                  </div>
-
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={field.required}
-                      onChange={(e) =>
-                        handleFieldChange(index, "required", e.target.checked)
-                      }
-                      className="mr-2"
-                    />
-                    <label>Required</label>
-                  </div>
-                </div>
-
-                {/* Field-specific options */}
-                {(field.type === "select" ||
-                  field.type === "select-multiple" ||
-                  field.type === "radio") && (
-                  <div className="mb-4">
-                    <label className="block font-medium">
-                      Options (comma separated):
+                    {(field.type === "select" ||
+                      field.type === "select-multiple" ||
+                      field.type === "radio") && (
+                      <input
+                        className="w-full border p-2 mb-2"
+                        placeholder="Options (comma separated)"
+                        value={field.options.join(",")}
+                        onChange={(e) =>
+                          handleFieldChange(
+                            sectionIndex,
+                            fieldIndex,
+                            "options",
+                            e.target.value.split(",")
+                          )
+                        }
+                      />
+                    )}
+                    {field.type === "range" && (
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          placeholder="Min"
+                          className="w-full border p-2"
+                          value={field.min || ""}
+                          onChange={(e) =>
+                            handleFieldChange(
+                              sectionIndex,
+                              fieldIndex,
+                              "min",
+                              e.target.value
+                            )
+                          }
+                        />
+                        <input
+                          type="number"
+                          placeholder="Max"
+                          className="w-full border p-2"
+                          value={field.max || ""}
+                          onChange={(e) =>
+                            handleFieldChange(
+                              sectionIndex,
+                              fieldIndex,
+                              "max",
+                              e.target.value
+                            )
+                          }
+                        />
+                        <input
+                          type="number"
+                          placeholder="Step"
+                          className="w-full border p-2"
+                          value={field.step || ""}
+                          onChange={(e) =>
+                            handleFieldChange(
+                              sectionIndex,
+                              fieldIndex,
+                              "step",
+                              e.target.value
+                            )
+                          }
+                        />
+                      </div>
+                    )}
+                    {(field.type === "text" || field.type === "textarea") && (
+                      <div className="flex gap-2 mt-2">
+                        <input
+                          type="number"
+                          placeholder="Min Length"
+                          className="w-full border p-2"
+                          value={field.minLength || ""}
+                          onChange={(e) =>
+                            handleFieldChange(
+                              sectionIndex,
+                              fieldIndex,
+                              "minLength",
+                              e.target.value
+                            )
+                          }
+                        />
+                        <input
+                          type="number"
+                          placeholder="Max Length"
+                          className="w-full border p-2"
+                          value={field.maxLength || ""}
+                          onChange={(e) =>
+                            handleFieldChange(
+                              sectionIndex,
+                              fieldIndex,
+                              "maxLength",
+                              e.target.value
+                            )
+                          }
+                        />
+                      </div>
+                    )}
+                    <label className="flex items-center gap-2 mt-2">
+                      <input
+                        type="checkbox"
+                        checked={field.required}
+                        onChange={(e) =>
+                          handleFieldChange(
+                            sectionIndex,
+                            fieldIndex,
+                            "required",
+                            e.target.checked
+                          )
+                        }
+                      />
+                      Required
                     </label>
-                    <input
-                      type="text"
-                      value={field.options.join(",")}
-                      onChange={(e) =>
-                        handleFieldChange(
-                          index,
-                          "options",
-                          e.target.value.split(",")
-                        )
-                      }
-                      className="border p-2 w-full"
-                      placeholder="Option1,Option2,Option3"
-                    />
-                  </div>
-                )}
-
-                {field.type === "number" && (
-                  <div className="grid grid-cols-2 gap-4 mb-4"></div>
-                )}
-
-                {field.type === "range" && (
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <label className="block font-medium">Min Value:</label>
-                      <input
-                        type="number"
-                        onWheel={(e) => e.target.blur()}
-                        value={field.min || ""}
-                        onChange={(e) =>
-                          handleFieldChange(index, "min", e.target.value)
+                    <div className="flex gap-4 mt-4 ">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleAddFieldBelow(sectionIndex, fieldIndex)
                         }
-                        className="border p-2 w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-medium">Max Value:</label>
-                      <input
-                        onWheel={(e) => e.target.blur()}
-                        type="number"
-                        value={field.max || ""}
-                        onChange={(e) =>
-                          handleFieldChange(index, "max", e.target.value)
-                        }
-                        className="border p-2 w-full"
-                      />
-                    </div>
+                        className="bg-green-500 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-green-600"
+                      >
+                        Add Field Below
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveField(sectionIndex)}
+                        className="bg-red-500 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-red-600"
+                      >
+                        Remove Field
+                      </button>
+                    </div>{" "}
                   </div>
-                )}
-
-                {field.type === "range" && (
-                  <div className="mb-4">
-                    <label className="block font-medium">Step:</label>
-                    <input
-                      type="number"
-                      onWheel={(e) => e.target.blur()}
-                      value={field.step || ""}
-                      onChange={(e) =>
-                        handleFieldChange(index, "step", e.target.value)
-                      }
-                      className="border p-2 w-full"
-                    />
-                  </div>
-                )}
-
-                {field.type === "date" && (
-                  <div className="grid grid-cols-2 gap-4 mb-4"></div>
-                )}
-
-                {(field.type === "text" || field.type === "textarea") && (
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <label className="block font-medium">Min Length:</label>
-                      <input
-                        type="number"
-                        onWheel={(e) => e.target.blur()}
-                        value={field.minLength || ""}
-                        onChange={(e) =>
-                          handleFieldChange(index, "minLength", e.target.value)
-                        }
-                        className="border p-2 w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-medium">Max Length:</label>
-                      <input
-                        type="number"
-                        onWheel={(e) => e.target.blur()}
-                        value={field.maxLength || ""}
-                        onChange={(e) =>
-                          handleFieldChange(index, "maxLength", e.target.value)
-                        }
-                        className="border p-2 w-full"
-                      />
-                    </div>
-                  </div>
-                )}
-                <div className="flex gap-4 mt-4 ">
-                  <button
-                    type="button"
-                    onClick={() => handleAddFieldBelow(index)}
-                    className="bg-green-500 text-white px-4 py-2 rounded-lg "
-                  >
-                    Add Field Below
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveField(index)}
-                    className="bg-red-500 text-white px-4 py-2 rounded-lg"
-                  >
-                    Remove Field
-                  </button>
-                </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => handleAddField(sectionIndex)}
+                  className="bg-green-500 text-white px-4 py-2 mt-2 rounded-lg cursor-pointer hover:bg-green-600"
+                >
+                  Add New Field
+                </button>{" "}
               </div>
             ))}
 
             <button
               type="button"
-              onClick={handleAddField}
-              className="bg-green-500 text-white px-4 py-2 mt-2 rounded-lg cursor-pointer hover:bg-green-600"
+              onClick={handleAddSection}
+              className="bg-green-500 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-green-600"
             >
-              Add New Field
+              Add Section
             </button>
           </div>
+
           <div className="flex gap-4 mt-4">
             <button
               type="submit"
@@ -896,6 +965,7 @@ const AdminPanel = () => {
             </button>
           </div>
         </form>
+
         {showFormIdModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-xl">
