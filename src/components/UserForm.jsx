@@ -20,6 +20,8 @@ const UserForm = ({ fields: initialFields }) => {
   const [slotCounts, setSlotCounts] = useState({});
 
   const fileInputRefs = useRef({});
+  const fieldRefs = useRef({});
+  const sectionRefs = useRef([]);
 
   useEffect(() => {
     if (!formId && !initialFields) return;
@@ -50,7 +52,12 @@ const UserForm = ({ fields: initialFields }) => {
               } else if (field.type === "select-multiple") {
                 initialResponses[field.name] = [];
               } else {
-                initialResponses[field.name] = "";
+                const isYearField =
+                  field.type === "number" &&
+                  field.name.toLowerCase().includes("year") &&
+                  field.name.toLowerCase().includes("pass");
+
+                initialResponses[field.name] = isYearField ? 2000 : "";
               }
             });
           });
@@ -443,6 +450,15 @@ const UserForm = ({ fields: initialFields }) => {
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       setIsSubmitting(false);
+
+      const firstErrorField = Object.keys(validationErrors)[0];
+      const errorElement = fieldRefs.current?.[firstErrorField];
+
+      if (errorElement && errorElement.scrollIntoView) {
+        errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        errorElement.focus?.();
+      }
+
       return;
     }
 
@@ -501,12 +517,6 @@ const UserForm = ({ fields: initialFields }) => {
         if (response.data.paymentRequired) {
           toast.info("A payment link has been sent to your email.");
         }
-        // if (response.data.paymentRequired) {
-        //   toast.info("A payment link has been sent to your email.");
-        //     setSubmitButtonText("Submit and Proceed for Payment");
-        //   } else {
-        //     setSubmitButtonText("Submit");
-        //   }
         setFormResponses({});
         setErrors({});
         Object.values(fileInputRefs.current).forEach((input) => {
@@ -603,17 +613,26 @@ const UserForm = ({ fields: initialFields }) => {
           {formData?.sections?.map((section, index) => (
             <h3
               key={index}
-              className="text-sm font-semibold capitalize py-1 px-2 bg-gray-200 text-gray-800 rounded mb-1"
+              className="text-sm font-semibold capitalize py-1 px-2 bg-gray-200 text-gray-800 rounded mb-1 cursor-pointer hover:bg-gray-300"
+              onClick={() =>
+                sectionRefs.current[index]?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                })
+              }
             >
               {section.sectionTitle}
             </h3>
           ))}
         </div>
         {/* Form Sections */}
-        {formData?.sections?.map((section, sectionIndex) => (
+        {formData?.sections?.map((section, sectionIndex) => {
+          const hasFileField = section.fields.some((f) => f.type === "file");
+          return (
           <div
             key={sectionIndex}
-            className="space-y-4 border border-gray-300 rounded p-6"
+            ref={(el) => (sectionRefs.current[sectionIndex] = el)}
+            className="space-y-4 border border-gray-300 rounded p-6 "
           >
             {/* Section Title */}
             <h3 className="bg-gray-200 text-gray-800 text-md font-bold uppercase px-4 py-2 rounded">
@@ -621,7 +640,11 @@ const UserForm = ({ fields: initialFields }) => {
             </h3>
 
             {/* Fields Grid */}
-            <div className="w-full grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <div
+              className={`w-full grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-${
+                hasFileField ? 2 : 3
+              }`}
+            >
               <>
                 {section.fields.map((field, fieldIndex) => {
                   const nameLower = field.name.toLowerCase();
@@ -634,11 +657,14 @@ const UserForm = ({ fields: initialFields }) => {
 
                   return (
                     <React.Fragment key={fieldIndex}>
-                     <div
-          className={`space-y-1 ${
-            field.type === "textarea" ? "sm:col-span-1 md:col-span-2 lg:col-span-3" : ""
-          }`}
-        >
+                      <div
+                        ref={(el) => {
+                          if (el) fieldRefs.current[field.name] = el;
+                        }}
+                        className={`space-y-1 ${
+                          field.type === "textarea" ? "sm:col-span-1 md:col-span-2 lg:col-span-3" : ""
+                        }`}
+                      >
                         <label className="block font-semibold uppercase text-sm text-gray-700">
                           {field.label}
                           {field.required && (
@@ -759,7 +785,7 @@ const UserForm = ({ fields: initialFields }) => {
                             className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
                           />
                         )}
-                        {/* Checkbox */}
+
                         {field.type === "checkbox" && (
                           <div>
                             <label className="inline-flex items-center">
@@ -785,7 +811,7 @@ const UserForm = ({ fields: initialFields }) => {
                             </label>
                           </div>
                         )}
-                        {/* Radio */}
+
                         {field.type === "radio" && field.options && (
                           <div className="flex gap-6">
                             {field.options.map((option, i) => (
@@ -811,7 +837,6 @@ const UserForm = ({ fields: initialFields }) => {
                           </div>
                         )}
 
-                        {/* Select */}
                         {field.type === "select" && (
                           <>
                             <select
@@ -991,7 +1016,8 @@ const UserForm = ({ fields: initialFields }) => {
               </>
             </div>
           </div>
-        ))}
+        )
+        })}
 
         {/* Slot Selection */}
         {formData.slotSelectionEnabled && (
