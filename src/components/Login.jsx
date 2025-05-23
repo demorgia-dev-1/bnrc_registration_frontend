@@ -18,8 +18,15 @@ function Login() {
       });
       console.log("response", response);
       sessionStorage.setItem("token", response.data.token);
+      sessionStorage.setItem("role", response.data.role);
+       sessionStorage.setItem("email", email); 
 
+       if (email === "testuser@gmail.com") {
+      navigate("/test-user");
+    } else {
       navigate("/admin-panel");
+    }
+      // navigate("/admin-panel");
     } catch (err) {
       console.log("Login error:", err);
       alert("Invalid credentials");

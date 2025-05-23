@@ -18,10 +18,53 @@ const UserForm = ({ fields: initialFields }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingBNRC, setLoadingBNRC] = useState(false);
   const [slotCounts, setSlotCounts] = useState({});
+  const [fileErrors, setFileErrors] = useState([]);
+  const [visibleSections, setVisibleSections] = useState([]);
 
   const fileInputRefs = useRef({});
   const fieldRefs = useRef({});
   const sectionRefs = useRef([]);
+
+  const districts = [
+    "Araria",
+    "Arwal",
+    "Aurangabad",
+    "Banka",
+    "Begusarai",
+    "Bhagalpur",
+    "Bhojpur",
+    "Buxar",
+    "Darbhanga",
+    "East Champaran",
+    "Gaya",
+    "Gopalganj",
+    "Jamui",
+    "Jehanabad",
+    "Kaimur",
+    "Katihar",
+    "Khagaria",
+    "Kishanganj",
+    "Lakhisarai",
+    "Madhepura",
+    "Madhubani",
+    "Munger",
+    "Muzaffarpur",
+    "Nalanda",
+    "Nawada",
+    "Patna",
+    "Purnia",
+    "Rohtas",
+    "Saharsa",
+    "Samastipur",
+    "Saran",
+    "Sheikhpura",
+    "Sheohar",
+    "Sitamarhi",
+    "Siwan",
+    "Supaul",
+    "Vaishali",
+    "West Champaran",
+  ];
 
   useEffect(() => {
     if (!formId && !initialFields) return;
@@ -162,6 +205,18 @@ const UserForm = ({ fields: initialFields }) => {
     formResponses.permanent_state,
   ]);
 
+  useEffect(() => {
+    if (formData?.sections) {
+      setVisibleSections(formData.sections.map(() => false));
+    }
+  }, [formData]);
+
+  const toggleSection = (index) => {
+    setVisibleSections((prev) =>
+      prev.map((visible, i) => (i === index ? !visible : visible))
+    );
+  };
+
   const hasAddressFields = () => {
     const fieldNames =
       form?.sections?.flatMap((section) =>
@@ -173,7 +228,7 @@ const UserForm = ({ fields: initialFields }) => {
     );
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = async (e) => {
     const { name, value, type, checked, files, options } = e.target;
     let newValue;
 
@@ -188,6 +243,7 @@ const UserForm = ({ fields: initialFields }) => {
     } else {
       newValue = value;
     }
+
     if (/slot/i.test(name)) {
       const normalizedValue = value?.trim().toLowerCase();
       const normalizedCounts = Object.fromEntries(
@@ -208,6 +264,21 @@ const UserForm = ({ fields: initialFields }) => {
     }
 
     setFormResponses((prev) => ({ ...prev, [name]: newValue }));
+
+    // Find the field definition
+    const field = form?.sections
+      ?.flatMap((s) => s.fields)
+      .find((f) => f.name === name);
+    if (field) {
+      await validateForm(field, newValue);
+    }
+
+    // Handle "Other" selection visibility
+    if (e.target.tagName === "SELECT" && value === "Other") {
+      setSelectOthers((prev) => ({ ...prev, [name]: true }));
+    } else if (e.target.tagName === "SELECT") {
+      setSelectOthers((prev) => ({ ...prev, [name]: false }));
+    }
 
     if (e.target.tagName === "SELECT" && value === "Other") {
       setSelectOthers((prev) => ({ ...prev, [name]: true }));
@@ -253,9 +324,11 @@ const UserForm = ({ fields: initialFields }) => {
     for (const field of allFields) {
       const value = formResponses[field.name];
       const lowerName = field.name.toLowerCase();
-      const isAadhaarField = /(aadhaar|aadhar|adhar|adhaar)/i.test(lowerName);
       const isPhoneField = /(contact|phone|mobile)/i.test(lowerName);
-      const isFileUpload = value instanceof File;
+      const isFileUpload =
+        value instanceof File ||
+        (Array.isArray(value) && value[0] instanceof File);
+      const isAadhaarField = /(aadhaar|aadhar|adhar|adhaar)/i.test(lowerName);
 
       if (
         field.required &&
@@ -288,7 +361,6 @@ const UserForm = ({ fields: initialFields }) => {
           console.error("Phone uniqueness check failed:", err);
         }
       }
-      // Aadhar uniqueness check
 
       if (isAadhaarField && !isFileUpload && value) {
         if (!aadhaarRegex.test(value)) {
@@ -357,6 +429,14 @@ const UserForm = ({ fields: initialFields }) => {
     }
 
     return errors;
+  };
+
+  const handleFieldValidation = async (fieldName) => {
+    const allErrors = await validateForm();
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      [fieldName]: allErrors[fieldName] || "",
+    }));
   };
 
   const fetchSlotCounts = async () => {
@@ -609,6 +689,18 @@ const UserForm = ({ fields: initialFields }) => {
         <h2 className="text-2xl font-bold text-center mb-6 bg-blue-900 p-2 text-white">
           {formData.formName}
         </h2>
+        {formData.instructionsTitle && (
+          <p className="py-1 px-2 text-gray-700 text-start bg-gray-200 text-lg font-semibold">
+            {formData.instructionsTitle}
+          </p>
+        )}
+        {formData.generalInstructions && (
+          <>
+            <p className="mb-10 whitespace-pre-line text-gray-700 text-start text-sm font-semibold mb-10 border-b-2">
+              {formData.generalInstructions}
+            </p>
+          </>
+        )}
         <div className="flex flex-wrap justify-start gap-2 mb-10 border-b-2">
           {formData?.sections?.map((section, index) => (
             <h3
@@ -629,394 +721,522 @@ const UserForm = ({ fields: initialFields }) => {
         {formData?.sections?.map((section, sectionIndex) => {
           const hasFileField = section.fields.some((f) => f.type === "file");
           return (
-          <div
-            key={sectionIndex}
-            ref={(el) => (sectionRefs.current[sectionIndex] = el)}
-            className="space-y-4 border border-gray-300 rounded p-6 "
-          >
-            {/* Section Title */}
-            <h3 className="bg-gray-200 text-gray-800 text-md font-bold uppercase px-4 py-2 rounded">
-              {section.sectionTitle}
-            </h3>
-
-            {/* Fields Grid */}
             <div
-              className={`w-full grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-${
-                hasFileField ? 2 : 3
-              }`}
+              key={sectionIndex}
+              ref={(el) => (sectionRefs.current[sectionIndex] = el)}
+              className="space-y-4 border border-gray-300 rounded p-6 "
             >
-              <>
-                {section.fields.map((field, fieldIndex) => {
-                  const nameLower = field.name.toLowerCase();
-                  const isPermanent = nameLower.includes("permanent");
-                  const isCorrespondence = nameLower.includes("correspondence");
+              {/* Section Title */}
+              <div
+                onClick={() => toggleSection(sectionIndex)}
+               className="flex justify-between items-center bg-gray-200 text-gray-800 text-md cursor-pointer font-bold uppercase px-4 py-2 rounded">
+                <span className="w-full">{section.sectionTitle}</span>
+                <button
+                  type="button"
+                  onClick={() => toggleSection(sectionIndex)}
+                  className="ml-2 text-2xl text-black w-6 h-6 flex items-center justify-center cursor-pointer"
+                  title={visibleSections[sectionIndex] ? "Minimize" : "Expand"}
+                >
+                  {visibleSections[sectionIndex] ? "−" : "+"}
+                </button>
+              </div>
 
-                  const hasCorrespondenceField = section.fields.some((f) =>
-                    f.name.toLowerCase().includes("correspondence")
-                  );
+              {/* Fields Grid */}
+              {visibleSections[sectionIndex] && (
+                <div
+                  className={`w-full grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-${
+                    hasFileField ? 2 : 3
+                  }`}
+                >
+                  <>
+                    {section.fields.map((field, fieldIndex) => {
+                      const nameLower = field.name.toLowerCase();
+                      const isPermanent = nameLower.includes("permanent");
+                      const isCorrespondence =
+                        nameLower.includes("correspondence");
 
-                  return (
-                    <React.Fragment key={fieldIndex}>
-                      <div
-                        ref={(el) => {
-                          if (el) fieldRefs.current[field.name] = el;
-                        }}
-                        className={`space-y-1 ${
-                          field.type === "textarea" ? "sm:col-span-1 md:col-span-2 lg:col-span-3" : ""
-                        }`}
-                      >
-                        <label className="block font-semibold uppercase text-sm text-gray-700">
-                          {field.label}
-                          {field.required && (
-                            <span className="text-red-600 font-bold text-md">
-                              {" "}
-                              *
-                            </span>
-                          )}
-                        </label>
+                      const hasCorrespondenceField = section.fields.some((f) =>
+                        f.name.toLowerCase().includes("correspondence")
+                      );
 
-                        {field.type === "text" && (
-                          <input
-                            type="text"
-                            name={field.name}
-                            value={formResponses[field.name] || ""}
-                            onChange={handleInputChange}
-                            placeholder={
-                              field.placeholder ||
-                              `Enter your ${field.label.toLowerCase()}`
-                            }
-                            required={field.required}
-                            disabled={shouldDisableField(field.name)}
-                            className={`w-full border border-gray-300 rounded px-3 py-2 text-sm ${
-                              shouldDisableField(field.name)
-                                ? "bg-gray-100 text-gray-800 cursor-not-allowed"
-                                : "focus:ring-blue-500"
-                            }`}
-                          />
-                        )}
-
-                        {field.type === "email" && (
-                          <input
-                            type="email"
-                            name={field.name}
-                            value={formResponses[field.name] || ""}
-                            onChange={handleInputChange}
-                            placeholder={
-                              field.placeholder ||
-                              `Enter your ${field.label.toLowerCase()}`
-                            }
-                            required={field.required}
-                            disabled={shouldDisableField(field.name)}
-                            className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                          />
-                        )}
-
-                        {field.type === "password" && (
-                          <input
-                            type="password"
-                            name={field.name}
-                            value={formResponses[field.name] || ""}
-                            onChange={handleInputChange}
-                            placeholder={
-                              field.placeholder ||
-                              `Enter your ${field.label.toLowerCase()}`
-                            }
-                            required={field.required}
-                            disabled={shouldDisableField(field.name)}
-                            className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                          />
-                        )}
-
-                        {field.type === "number" && (
-                          <input
-                            type="number"
-                            name={field.name}
-                            value={formResponses[field.name] || ""}
-                            onChange={handleInputChange}
-                            onWheel={(e) => e.target.blur()}
-                            placeholder={
-                              field.placeholder ||
-                              `Enter your ${field.label.toLowerCase()}`
-                            }
-                            required={field.required}
-                            disabled={shouldDisableField(field.name)}
-                            className={`w-full border border-gray-300 rounded px-3 py-2 text-sm ${
-                              shouldDisableField(field.name)
-                                ? "bg-gray-100 text-gray-800 cursor-not-allowed"
-                                : "focus:ring-blue-500"
-                            }`}
-                          />
-                        )}
-
-                        {field.type === "date" && (
-                          <input
-                            type="date"
-                            name={field.name}
-                            value={formResponses[field.name] || ""}
-                            onChange={handleInputChange}
-                            required={field.required}
-                            disabled={shouldDisableField(field.name)}
-                            className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                          />
-                        )}
-
-                        {field.type === "time" && (
-                          <input
-                            type="time"
-                            name={field.name}
-                            value={formResponses[field.name] || ""}
-                            onChange={handleInputChange}
-                            required={field.required}
-                            disabled={shouldDisableField(field.name)}
-                            className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                          />
-                        )}
-
-                        {field.type === "file" && (
-                          <input
-                            type="file"
-                            name={field.name}
-                            ref={(ref) =>
-                              (fileInputRefs.current[field.name] = ref)
-                            }
-                            onChange={handleInputChange}
-                            required={field.required}
-                            disabled={shouldDisableField(field.name)}
-                            className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                          />
-                        )}
-
-                        {field.type === "checkbox" && (
-                          <div>
-                            <label className="inline-flex items-center">
-                              <input
-                                type="checkbox"
-                                name={field.name}
-                                checked={
-                                  Array.isArray(formResponses[field.name])
-                                    ? formResponses[field.name].includes(true)
-                                    : formResponses[field.name] || false
-                                }
-                                onChange={handleInputChange}
-                                required={
-                                  field.required &&
-                                  (!formResponses[field.name] ||
-                                    (Array.isArray(formResponses[field.name]) &&
-                                      formResponses[field.name].length === 0))
-                                }
-                                disabled={shouldDisableField(field.name)}
-                                className="mr-2"
-                              />
-                              <span className="font-medium">{field.label}</span>
+                      return (
+                        <React.Fragment key={fieldIndex}>
+                          <div
+                            ref={(el) => {
+                              if (el) fieldRefs.current[field.name] = el;
+                            }}
+                            className={`w-full sm:col-span-1 md:col-span-2 ${
+                              field.type === "textarea"
+                                ? "lg:col-span-3"
+                                : "lg:col-span-1"
+                            } space-y-1 box-border`}
+                          >
+                            <label className="block font-semibold uppercase text-sm text-gray-700">
+                              {field.label}
+                              {field.required && (
+                                <span className="text-red-600 font-bold text-md">
+                                  {" "}
+                                  *
+                                </span>
+                              )}
+                              {field.type === "file" && (
+                                <div className="flex items-center inline-block ml-1 relative group cursor-pointer">
+                                  <svg
+                                    className="w-4 h-4 text-gray-500"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M18 10A8 8 0 112 10a8 8 0 0116 0zm-9-1h2v5H9V9zm1-4a1 1 0 100 2 1 1 0 000-2z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                  <div className="absolute z-10 w-64 p-2 text-xs text-white bg-black rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-1">
+                                    JPG only, max 500KB for photos/signatures.
+                                    PDF only, max 5MB for certificates.
+                                  </div>
+                                </div>
+                              )}
                             </label>
-                          </div>
-                        )}
 
-                        {field.type === "radio" && field.options && (
-                          <div className="flex gap-6">
-                            {field.options.map((option, i) => (
-                              <label
-                                key={i}
-                                className="flex items-center gap-2 font-medium"
+                            {field.type === "text" && (
+                              <input
+                                type="text"
+                                name={field.name}
+                                value={formResponses[field.name] || ""}
+                                onChange={handleInputChange}
+                                onBlur={() => handleFieldValidation(field.name)}
+                                placeholder={
+                                  field.placeholder ||
+                                  `Enter your ${field.label.toLowerCase()}`
+                                }
+                                required={field.required}
+                                disabled={shouldDisableField(field.name)}
+                                className={`w-full border border-gray-300 rounded px-3 py-2 text-sm ${
+                                  shouldDisableField(field.name)
+                                    ? "bg-gray-100 text-gray-800 cursor-not-allowed"
+                                    : "focus:ring-blue-500"
+                                }`}
+                              />
+                            )}
+
+                            {field.type === "email" && (
+                              <input
+                                type="email"
+                                name={field.name}
+                                value={formResponses[field.name] || ""}
+                                onChange={handleInputChange}
+                                onBlur={() => handleFieldValidation(field.name)}
+                                placeholder={
+                                  field.placeholder ||
+                                  `Enter your ${field.label.toLowerCase()}`
+                                }
+                                required={field.required}
+                                disabled={shouldDisableField(field.name)}
+                                className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                              />
+                            )}
+
+                            {field.type === "password" && (
+                              <input
+                                type="password"
+                                name={field.name}
+                                value={formResponses[field.name] || ""}
+                                onChange={handleInputChange}
+                                onBlur={() => handleFieldValidation(field.name)}
+                                placeholder={
+                                  field.placeholder ||
+                                  `Enter your ${field.label.toLowerCase()}`
+                                }
+                                required={field.required}
+                                disabled={shouldDisableField(field.name)}
+                                className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                              />
+                            )}
+
+                            {field.type === "number" && (
+                              <input
+                                type="number"
+                                name={field.name}
+                                value={formResponses[field.name] || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+
+                                  if (/^-/.test(value)) return;
+                                  if (/^0\d+/.test(value)) return;
+
+                                  handleInputChange(e);
+                                }}
+                                onWheel={(e) => e.target.blur()}
+                                onBlur={() => handleFieldValidation(field.name)}
+                                placeholder={
+                                  field.placeholder ||
+                                  `Enter your ${field.label.toLowerCase()}`
+                                }
+                                required={field.required}
+                                disabled={shouldDisableField(field.name)}
+                                className={`w-full border border-gray-300 rounded px-3 py-2 text-sm ${
+                                  shouldDisableField(field.name)
+                                    ? "bg-gray-100 text-gray-800 cursor-not-allowed"
+                                    : "focus:ring-blue-500"
+                                }`}
+                                min={0}
+                                step="1"
+                              />
+                            )}
+
+                            {field.type === "date" && (
+                              <input
+                                type="date"
+                                name={field.name}
+                                value={formResponses[field.name] || ""}
+                                onChange={handleInputChange}
+                                required={field.required}
+                                disabled={shouldDisableField(field.name)}
+                                className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                              />
+                            )}
+
+                            {field.type === "time" && (
+                              <input
+                                type="time"
+                                name={field.name}
+                                value={formResponses[field.name] || ""}
+                                onChange={handleInputChange}
+                                required={field.required}
+                                disabled={shouldDisableField(field.name)}
+                                className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                              />
+                            )}
+
+                            {field.type === "file" && (
+                              <input
+                                type="file"
+                                name={field.name}
+                                ref={(ref) =>
+                                  (fileInputRefs.current[field.name] = ref)
+                                }
+                                accept=".jpg,.jpeg,.pdf"
+                                multiple
+                                onChange={handleInputChange}
+                                //  onBlur={() => handleFieldValidation(field.name)}
+                                required={field.required}
+                                disabled={shouldDisableField(field.name)}
+                                className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                              />
+                            )}
+                            {fileErrors[field.name] &&
+                              fileErrors[field.name].map((err, idx) => (
+                                <div
+                                  key={idx}
+                                  className="text-red-500 text-xs mt-1"
+                                >
+                                  {err}
+                                </div>
+                              ))}
+
+                            {field.type === "checkbox" && (
+                              <div>
+                                <label className="inline-flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    name={field.name}
+                                    checked={
+                                      Array.isArray(formResponses[field.name])
+                                        ? formResponses[field.name].includes(
+                                            true
+                                          )
+                                        : formResponses[field.name] || false
+                                    }
+                                    onChange={handleInputChange}
+                                    required={
+                                      field.required &&
+                                      (!formResponses[field.name] ||
+                                        (Array.isArray(
+                                          formResponses[field.name]
+                                        ) &&
+                                          formResponses[field.name].length ===
+                                            0))
+                                    }
+                                    disabled={shouldDisableField(field.name)}
+                                    className="mr-2"
+                                  />
+                                  <span className="font-medium">
+                                    {field.label}
+                                  </span>
+                                </label>
+                              </div>
+                            )}
+
+                            {field.type === "radio" && field.options && (
+                              <div className="flex gap-6">
+                                {field.options.map((option, i) => (
+                                  <label
+                                    key={i}
+                                    className="flex items-center gap-2 font-medium"
+                                  >
+                                    <input
+                                      type="radio"
+                                      name={field.name}
+                                      value={option.value || option}
+                                      checked={
+                                        formResponses[field.name] ===
+                                        (option.value || option)
+                                      }
+                                      onChange={handleInputChange}
+                                      required={field.required}
+                                      disabled={shouldDisableField(field.name)}
+                                    />
+                                    {option.label || option}
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* {field.type === "select" && (
+                            <>
+                              <select
+                                name={field.name}
+                                value={formResponses[field.name] || ""}
+                                onChange={handleInputChange}
+                                required={field.required}
+                                disabled={shouldDisableField(field.name)}
+                                className={`w-full border border-gray-300 rounded px-3 py-2 text-sm ${
+                                  shouldDisableField(field.name)
+                                    ? "bg-gray-100 text-gray-800 cursor-not-allowed"
+                                    : "focus:ring-blue-500"
+                                }`}
                               >
+                                <option value="">
+                                  {field.placeholder ||
+                                    `Select ${field.label.toLowerCase()}`}
+                                </option>
+                                {[
+                                  ...(field.options || []),
+                                  ...(customOptions[field.name] || []),
+                                ].map((option, i) => {
+                                  const value = option.value || option;
+                                  const label = option.label || option;
+                                  const isSlotField = /slot/i.test(field.name);
+                                  const isFull =
+                                    isSlotField &&
+                                    slotCounts?.[value] >=
+                                      (field.options.find(
+                                        (opt) => opt.value === value
+                                      )?.max || 25);
+                                  return (
+                                    <option key={i} value={value}>
+                                      {label} {isFull ? "(Full)" : ""}
+                                    </option>
+                                  );
+                                })}
+                                {!/slot/i.test(field.name) && (
+                                  <option value="Other">Other</option>
+                                )}
+                              </select>
+
+                              {selectOthers[field.name] && (
                                 <input
-                                  type="radio"
-                                  name={field.name}
-                                  value={option.value || option}
-                                  checked={
-                                    formResponses[field.name] ===
-                                    (option.value || option)
+                                  type="text"
+                                  placeholder="Enter other value"
+                                  className="mt-2 w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                                  onBlur={(e) =>
+                                    handleOtherInput(field.name, e.target.value)
                                   }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      handleOtherInput(
+                                        field.name,
+                                        e.target.value
+                                      );
+                                    }
+                                  }}
+                                  autoFocus
+                                />
+                              )}
+                            </>
+                          )} */}
+
+                            {field.type === "select" && (
+                              <>
+                                <select
+                                  name={field.name}
+                                  value={formResponses[field.name] || ""}
                                   onChange={handleInputChange}
                                   required={field.required}
                                   disabled={shouldDisableField(field.name)}
-                                />
-                                {option.label || option}
-                              </label>
-                            ))}
-                          </div>
-                        )}
-
-                        {field.type === "select" && (
-                          <>
-                            <select
-                              name={field.name}
-                              value={formResponses[field.name] || ""}
-                              onChange={handleInputChange}
-                              required={field.required}
-                              disabled={shouldDisableField(field.name)}
-                              className={`w-full border border-gray-300 rounded px-3 py-2 text-sm ${
-                                shouldDisableField(field.name)
-                                  ? "bg-gray-100 text-gray-800 cursor-not-allowed"
-                                  : "focus:ring-blue-500"
-                              }`}
-                            >
-                              <option value="">
-                                {field.placeholder ||
-                                  `Select ${field.label.toLowerCase()}`}
-                              </option>
-                              {[
-                                ...(field.options || []),
-                                ...(customOptions[field.name] || []),
-                              ].map((option, i) => {
-                                const value = option.value || option;
-                                const label = option.label || option;
-                                const isSlotField = /slot/i.test(field.name);
-                                const isFull =
-                                  isSlotField &&
-                                  slotCounts?.[value] >=
-                                    (field.options.find(
-                                      (opt) => opt.value === value
-                                    )?.max || 25);
-                                return (
-                                  <option key={i} value={value}>
-                                    {label} {isFull ? "(Full)" : ""}
+                                  className={`w-full border border-gray-300 rounded px-3 py-2 text-sm ${
+                                    shouldDisableField(field.name)
+                                      ? "bg-gray-100 text-gray-800 cursor-not-allowed"
+                                      : "focus:ring-blue-500"
+                                  }`}
+                                >
+                                  <option value="">
+                                    {field.placeholder ||
+                                      `Select ${field.label.toLowerCase()}`}
                                   </option>
-                                );
-                              })}
-                              {!/slot/i.test(field.name) && (
-                                <option value="Other">Other</option>
-                              )}
-                            </select>
 
-                            {selectOthers[field.name] && (
-                              <input
-                                type="text"
-                                placeholder="Enter other value"
-                                className="mt-2 w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                                onBlur={(e) =>
-                                  handleOtherInput(field.name, e.target.value)
+                                  {/year.*pass/i.test(field.name)
+                                    ? Array.from({ length: 26 }, (_, i) => {
+                                        const year = 2025 - i;
+                                        return (
+                                          <option key={year} value={year}>
+                                            {year}
+                                          </option>
+                                        );
+                                      })
+                                    : [
+                                        ...(field.options || []),
+                                        ...(customOptions[field.name] || []),
+                                      ].map((option, i) => {
+                                        const value = option.value || option;
+                                        const label = option.label || option;
+                                        const isSlotField = /slot/i.test(
+                                          field.name
+                                        );
+                                        const isFull =
+                                          isSlotField &&
+                                          slotCounts?.[value] >=
+                                            (field.options.find(
+                                              (opt) => opt.value === value
+                                            )?.max || 25);
+                                        return (
+                                          <option key={i} value={value}>
+                                            {label} {isFull ? "(Full)" : ""}
+                                          </option>
+                                        );
+                                      })}
+                                </select>
+                              </>
+                            )}
+
+                            {field.type === "textarea" && (
+                              <textarea
+                                name={field.name}
+                                value={formResponses[field.name] || ""}
+                                onChange={handleInputChange}
+                                required={field.required}
+                                placeholder={
+                                  field.placeholder ||
+                                  `Enter your ${field.label.toLowerCase()}`
                                 }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    handleOtherInput(
-                                      field.name,
-                                      e.target.value
-                                    );
-                                  }
-                                }}
-                                autoFocus
+                                rows={field.rows || 4}
+                                // className="w-full border border-gray-300 rounded px-3 py-2 text-sm resize-y"
+                                className="w-full max-w-full box-border border border-gray-300 rounded px-3 py-2 text-sm resize-y break-words"
                               />
                             )}
-                          </>
-                        )}
 
-                        {field.type === "textarea" && (
-                          <textarea
-                            name={field.name}
-                            value={formResponses[field.name] || ""}
-                            onChange={handleInputChange}
-                            required={field.required}
-                            placeholder={
-                              field.placeholder ||
-                              `Enter your ${field.label.toLowerCase()}`
-                            }
-                            rows={field.rows || 4}
-                            className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                          />
-                        )}
+                            {field.type === "range" && (
+                              <div>
+                                <input
+                                  type="range"
+                                  name={field.name}
+                                  value={
+                                    formResponses[field.name] || field.min || 0
+                                  }
+                                  onChange={handleInputChange}
+                                  min={field.min || 0}
+                                  max={field.max || 100}
+                                  step={field.step || 1}
+                                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                                />
+                                <span>
+                                  {formResponses[field.name] || field.min || 0}
+                                </span>
+                              </div>
+                            )}
 
-                        {field.type === "range" && (
-                          <div>
-                            <input
-                              type="range"
-                              name={field.name}
-                              value={
-                                formResponses[field.name] || field.min || 0
-                              }
-                              onChange={handleInputChange}
-                              min={field.min || 0}
-                              max={field.max || 100}
-                              step={field.step || 1}
-                              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                            />
-                            <span>
-                              {formResponses[field.name] || field.min || 0}
-                            </span>
-                          </div>
-                        )}
-
-                        {field.type === "color" && (
-                          <input
-                            type="color"
-                            name={field.name}
-                            value={formResponses[field.name] || "#000000"}
-                            onChange={handleInputChange}
-                            required={field.required}
-                            className="h-10 w-10 rounded border border-gray-300"
-                          />
-                        )}
-
-                        {errors[field.name] && (
-                          <p className="text-red-600 text-sm mt-1">
-                            {errors[field.name]}
-                          </p>
-                        )}
-                      </div>
-                      {isPermanent &&
-                        hasCorrespondenceField &&
-                        (fieldIndex + 1 === section.fields.length ||
-                          (section.fields[fieldIndex + 1] &&
-                            section.fields[fieldIndex + 1].name
-                              .toLowerCase()
-                              .includes("correspondence"))) && (
-                          <div className="mb-4 col-span-full">
-                            <label className="inline-flex items-center gap-2 cursor-pointer">
+                            {field.type === "color" && (
                               <input
-                                type="checkbox"
-                                name="sameAsPermanent"
-                                checked={formResponses.sameAsPermanent || false}
-                                onChange={(e) => {
-                                  const checked = e.target.checked;
-                                  setFormResponses((prev) => {
-                                    const updated = {
-                                      ...prev,
-                                      sameAsPermanent: checked,
-                                    };
-
-                                    const allFields =
-                                      form?.sections?.flatMap(
-                                        (section) => section.fields
-                                      ) || [];
-
-                                    if (checked) {
-                                      allFields.forEach((field) => {
-                                        const name = field.name.toLowerCase();
-                                        if (name.includes("correspondence")) {
-                                          const related = name.replace(
-                                            "correspondence",
-                                            "permanent"
-                                          );
-                                          updated[field.name] =
-                                            prev[related] || "";
-                                        }
-                                      });
-                                    } else {
-                                      allFields.forEach((field) => {
-                                        const name = field.name.toLowerCase();
-                                        if (name.includes("correspondence")) {
-                                          updated[field.name] = "";
-                                        }
-                                      });
-                                    }
-
-                                    return updated;
-                                  });
-                                }}
-                                className="mr-2"
+                                type="color"
+                                name={field.name}
+                                value={formResponses[field.name] || "#000000"}
+                                onChange={handleInputChange}
+                                required={field.required}
+                                className="h-10 w-10 rounded border border-gray-300"
                               />
-                              Same as Permanent Address
-                            </label>
+                            )}
+
+                            {errors[field.name] && (
+                              <p className="text-red-600 text-sm mt-1">
+                                {errors[field.name]}
+                              </p>
+                            )}
                           </div>
-                        )}
-                    </React.Fragment>
-                  );
-                })}
-              </>
+                          {isPermanent &&
+                            hasCorrespondenceField &&
+                            (fieldIndex + 1 === section.fields.length ||
+                              (section.fields[fieldIndex + 1] &&
+                                section.fields[fieldIndex + 1].name
+                                  .toLowerCase()
+                                  .includes("correspondence"))) && (
+                              <div className="mb-4 col-span-full">
+                                <label className="inline-flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    name="sameAsPermanent"
+                                    checked={
+                                      formResponses.sameAsPermanent || false
+                                    }
+                                    onChange={(e) => {
+                                      const checked = e.target.checked;
+                                      setFormResponses((prev) => {
+                                        const updated = {
+                                          ...prev,
+                                          sameAsPermanent: checked,
+                                        };
+
+                                        const allFields =
+                                          form?.sections?.flatMap(
+                                            (section) => section.fields
+                                          ) || [];
+
+                                        if (checked) {
+                                          allFields.forEach((field) => {
+                                            const name =
+                                              field.name.toLowerCase();
+                                            if (
+                                              name.includes("correspondence")
+                                            ) {
+                                              const related = name.replace(
+                                                "correspondence",
+                                                "permanent"
+                                              );
+                                              updated[field.name] =
+                                                prev[related] || "";
+                                            }
+                                          });
+                                        } else {
+                                          allFields.forEach((field) => {
+                                            const name =
+                                              field.name.toLowerCase();
+                                            if (
+                                              name.includes("correspondence")
+                                            ) {
+                                              updated[field.name] = "";
+                                            }
+                                          });
+                                        }
+
+                                        return updated;
+                                      });
+                                    }}
+                                    className="mr-2"
+                                  />
+                                  Same as Permanent Address
+                                </label>
+                              </div>
+                            )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </>
+                </div>
+              )}
             </div>
-          </div>
-        )
+          );
         })}
 
         {/* Slot Selection */}

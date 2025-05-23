@@ -27,14 +27,10 @@ const Modal = ({ show, onClose, data, children }) => {
       <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
         <div className="bg-white rounded-lg shadow-xl w-11/12 md:w-4/5 lg:w-2/3 max-h-[90vh] overflow-y-auto p-6">
           <div className="flex justify-between mb-4">
-            <h2 className="text-xl font-bold">
-              {data?.form?.formName
-                ? `Form: ${data.form.formName}`
-                : "Uploaded Files"}
-            </h2>
+            <h2 className="text-xl font-bold">{data?.form?.formName}</h2>
             <button
               onClick={onClose}
-              className="text-red-600 text-2xl font-bold"
+              className="text-red-600 text-2xl font-bold cursor-pointer "
             >
               ×
             </button>
@@ -61,19 +57,33 @@ const Modal = ({ show, onClose, data, children }) => {
                         )}
                         {files?.length > 0 && (
                           <div className="flex gap-3 flex-wrap">
-                            {files.map((file, idx) => (
-                              <img
-                                key={idx}
-                                src={`${API_BASE_URL}/api/download/${file._id}`}
-                                alt={file.originalName || "Uploaded file"}
-                                className="w-32 h-32 object-cover border rounded cursor-pointer"
-                                onClick={() =>
-                                  setPreviewImage(
-                                    `${API_BASE_URL}/api/download/${file._id}`
-                                  )
-                                }
-                              />
-                            ))}
+                            {files.map((file, idx) => {
+                              const fileUrl = `${API_BASE_URL}/api/download/${file._id}`;
+                              const isPdf = file.originalName
+                                ?.toLowerCase()
+                                .endsWith(".pdf");
+                              return isPdf ? (
+                                <button
+                                  key={idx}
+                                  onClick={() => window.open(fileUrl)}
+                                  className="w-32 h-32 border rounded flex flex-col items-center justify-center cursor-pointer bg-gray-100 text-gray-700 p-2 text-center"
+                                  title="Open PDF in new tab"
+                                >
+                                  <span className="text-4xl mb-1">📄</span>
+                                  <span className="truncate w-full">
+                                    {file.fieldName}
+                                  </span>
+                                </button>
+                              ) : (
+                                <img
+                                  key={idx}
+                                  src={fileUrl}
+                                  alt={file.originalName || "Uploaded file"}
+                                  className="w-32 h-32 object-cover border rounded cursor-pointer"
+                                  onClick={() => setPreviewImage(fileUrl)}
+                                />
+                              );
+                            })}
                           </div>
                         )}
                         {!value && (!files || files.length === 0) && "N/A"}
@@ -91,7 +101,7 @@ const Modal = ({ show, onClose, data, children }) => {
 
       {previewImage && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center">
-          <div className="relative">
+          <div className="relative ">
             <button
               onClick={() => setPreviewImage(null)}
               className="absolute top-2 right-2 text-white bg-black bg-opacity-50 hover:bg-opacity-80 rounded-full text-xl px-3 py-1 cursor-pointer"
@@ -99,11 +109,19 @@ const Modal = ({ show, onClose, data, children }) => {
             >
               ×
             </button>
-            <img
-              src={previewImage}
-              alt="Full Preview"
-              className="max-w-full max-h-[90vh] rounded-lg"
-            />
+            {previewImage.toLowerCase().endsWith(".pdf") ? (
+              <iframe
+                src={previewImage}
+                title="PDF Preview"
+                className="w-full h-[90vh]"
+              />
+            ) : (
+              <img
+                src={previewImage}
+                alt="Full Preview"
+                className="max-w-full max-h-[90vh] rounded-lg"
+              />
+            )}
           </div>
         </div>
       )}
@@ -135,6 +153,8 @@ const AdminPanel = () => {
   const [forms, setForms] = useState([]);
   const [selectedFormId, setSelectedFormId] = useState("");
   const [sections, setSections] = useState([{ name: "", fields: [] }]);
+  const [instructionsTitle, setInstructionsTitle] = useState("");
+  const [generalInstructions, setGeneralInstructions] = useState("");
 
   const navigate = useNavigate();
 
@@ -191,6 +211,16 @@ const AdminPanel = () => {
 
     fetchFiles();
   }, []);
+
+  useEffect(() => {
+    if (generalInstructions) {
+    }
+  }, [generalInstructions]);
+
+  const handleLogout = () => {
+    sessionStorage.clear(); // or sessionStorage.removeItem('token') and others if you prefer
+    window.location.href = "/login"; // Redirect to login page
+  };
 
   const downloadFormExcel = async () => {
     try {
@@ -290,6 +320,8 @@ const AdminPanel = () => {
       setStatus(data.status || "Active");
       setPaymentRequired(data.paymentRequired || false);
       setPaymentDetails(data.paymentDetails || { amount: "", method: "" });
+      setInstructionsTitle(data.instructionsTitle || "");
+      setGeneralInstructions(data.generalInstructions || "");
 
       setFields(data.fields || []); // if you still need it
       setSections(data.sections || []); // <--- ADD THIS LINE to load sections for editing
@@ -314,7 +346,8 @@ const AdminPanel = () => {
       paymentRequired,
       paymentDetails: paymentRequired ? paymentDetails : null,
       sections,
-      // fields,
+      instructionsTitle,
+      generalInstructions,
     };
 
     try {
@@ -451,11 +484,26 @@ const AdminPanel = () => {
     setSections(updated);
   };
 
+  // const handleRemoveField = (sectionIndex, fieldIndex) => {
+  //   const updated = [...sections];
+  //   updated[sectionIndex].fields.splice(fieldIndex, 1);
+  //   setSections(updated);
+  // };
+
   const handleRemoveField = (sectionIndex, fieldIndex) => {
-    const updated = [...sections];
-    updated[sectionIndex].fields.splice(fieldIndex, 1);
-    setSections(updated);
-  };
+  setSections((prevSections) => {
+    const updated = [...prevSections];
+    const sectionFields = [...updated[sectionIndex].fields];
+
+    sectionFields.splice(fieldIndex, 1); // remove the correct field
+    updated[sectionIndex] = {
+      ...updated[sectionIndex],
+      fields: sectionFields,
+    };
+
+    return updated;
+  });
+};
 
   const fetchForm = async (formId) => {
     try {
@@ -514,7 +562,7 @@ const AdminPanel = () => {
         className="w-full h-full object-cover absolute inset-0"
       />
       <div className="absolute top-0 right-0 h-full w-1/2 flex flex-col items-center justify-center z-10">
-        <div className="mt-5 p-5 rounded-lg w-full max-w-lg flex  justify-between gap-2">
+        <div className="mt-5 p-5 rounded-lg w-full max-w-lg flex flex-wrap justify-between gap-2">
           <div className=" py-1 px-4 bg-blue-700 text-white rounded-lg shadow-xl hover:bg-blue-800 cursor-pointer">
             <select
               id="formSelect"
@@ -541,11 +589,16 @@ const AdminPanel = () => {
           </button>
 
           <Modal show={showListModal} onClose={() => setShowListModal(false)}>
+            <h2 className="text-xl font-bold mb-4">
+              {forms.find((f) => f._id === selectedFormId)?.formName ||
+                "selected form"}
+            </h2>
             <table className="min-w-full border border-gray-300">
               <thead>
                 <tr className="bg-gray-200 text-left">
                   <th className="p-2 border">Candidate</th>
-                  <th className="p-2 border">Submission ID</th>
+                  <th className="p-2 border">BNRC Registration</th>
+                  {/* <th className="p-2 border">Submission ID</th> */}
                   <th className="p-2 border">Files</th>
                   <th className="p-2 border">Action</th>
                 </tr>
@@ -586,15 +639,30 @@ const AdminPanel = () => {
                             : "N/A";
                         })()}
                       </td>
-
-                      <td className="p-2 border">{submission._id}</td>
+                      <td className="p-2 border">
+                        {(() => {
+                          const formFields =
+                            submission.form?.sections?.flatMap(
+                              (section) => section.fields
+                            ) || [];
+                          const bnrcField = formFields.find(
+                            (f) =>
+                              f.label.toLowerCase().includes("bnrc") ||
+                              f.name.toLowerCase().includes("bnrc")
+                          );
+                          const bnrcKey = bnrcField?.name;
+                          return bnrcKey
+                            ? submission.responses?.[bnrcKey] || "N/A"
+                            : "N/A";
+                        })()}
+                      </td>
+                      {/* <td className="p-2 border">{submission._id}</td> */}
                       <td className="p-2 border">
                         {submission.uploadedFiles?.length > 0
-                          ? submission.uploadedFiles.map((file, i) => (
-                              <div key={i}>{file.originalName}</div>
-                            ))
+                          ? `${submission.uploadedFiles.length} files`
                           : "No File"}
                       </td>
+
                       <td className="p-2 border">
                         <button
                           onClick={() => {
@@ -636,6 +704,12 @@ const AdminPanel = () => {
             className="py-2 px-4 bg-blue-700 text-white rounded-lg shadow-xl hover:bg-blue-800 cursor-pointer"
           >
             Download Submissions
+          </button>
+          <button
+            onClick={handleLogout}
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          >
+            Logout
           </button>
         </div>
         <form
@@ -737,6 +811,25 @@ const AdminPanel = () => {
 
           {/* Sections */}
           <div className="mt-6 space-y-6">
+            <div className="mb-6">
+              <input
+                className="w-full border p-2 mb-2 capitalize"
+                placeholder="General Instructions Title"
+                value={instructionsTitle}
+                onChange={(e) => setInstructionsTitle(e.target.value)}
+                required
+              />
+              <label className="block font-semibold text-gray-700 mb-1">
+                General Instructions (shown before the form starts)
+              </label>
+              <textarea
+                rows={5}
+                className="w-full border p-2 rounded"
+                placeholder="Enter general instructions here..."
+                value={generalInstructions}
+                onChange={(e) => setGeneralInstructions(e.target.value)}
+              />
+            </div>
             {sections.map((section, sectionIndex) => (
               <div key={sectionIndex} className="border p-4 rounded">
                 <div className="flex justify-between items-center">
@@ -762,7 +855,6 @@ const AdminPanel = () => {
                     Remove Section
                   </button>
                 </div>
-                {/* Fields */}
                 {section.fields.map((field, fieldIndex) => (
                   <div
                     key={fieldIndex}
@@ -920,12 +1012,13 @@ const AdminPanel = () => {
                         Add Field Below
                       </button>
                       <button
-                        type="button"
-                        onClick={() => handleRemoveField(sectionIndex)}
-                        className="bg-red-500 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-red-600"
-                      >
-                        Remove Field
-                      </button>
+  type="button"
+  onClick={() => handleRemoveField(sectionIndex, fieldIndex)}
+  className="bg-red-500 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-red-600"
+>
+  Remove Field
+</button>
+
                     </div>{" "}
                   </div>
                 ))}
