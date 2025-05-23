@@ -922,7 +922,7 @@ const UserForm = ({ fields: initialFields }) => {
                                 onChange={handleInputChange}
                                 //  onBlur={() => handleFieldValidation(field.name)}
                                 required={field.required}
-                                disabled={shouldDisableField(field.name)}
+                                // disabled={shouldDisableField(field.name)}
                                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
                               />
                             )}
