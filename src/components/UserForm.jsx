@@ -660,21 +660,42 @@ const UserForm = ({ fields: initialFields }) => {
     return !isNaN(normalizedValue) && normalizedValue === 0;
   };
 
-  const shouldDisableField = (fieldName) => {
-    const keywords = [
-      "employer",
-      "company",
-      "designation",
-      "job",
-      "work",
-      "employment",
-      "experience_details",
-    ];
-    return (
-      isExperienceZero() &&
-      keywords.some((keyword) => fieldName.toLowerCase().includes(keyword))
-    );
-  };
+  // const shouldDisableField = (fieldName) => {
+  //   const keywords = [
+  //     "employer",
+  //     "company",
+  //     "designation",
+  //     "job",
+  //     "work",
+  //     "employment",
+  //     "experience_details",
+  //   ];
+  //   return (
+  //     isExperienceZero() &&
+  //     keywords.some((keyword) => fieldName.toLowerCase().includes(keyword))
+  //   );
+  // };
+
+  const shouldDisableField = (fieldName, fieldType) => {
+  const keywords = [
+    "employer",
+    "company",
+    "designation",
+    "job",
+    "work",
+    "employment",
+    "experience_details",
+  ];
+
+  // Never disable file fields
+  if (fieldType === "file") return false;
+
+  return (
+    isExperienceZero() &&
+    keywords.some((keyword) => fieldName.toLowerCase().includes(keyword))
+  );
+};
+
 
   if (!formData) return <div>Loading...</div>;
 
