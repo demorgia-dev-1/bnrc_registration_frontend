@@ -5,6 +5,7 @@ import Login from "./components/Login";
 import { ToastContainer } from "react-toastify";
 import TestUserPanel from "./components/TestUserPanel";
 import "react-toastify/dist/ReactToastify.css";
+import ThankYou from "./components/Thankyou";
 
 export default function App() {
   const currentUser = JSON.parse(sessionStorage.getItem("user"));
@@ -56,6 +57,7 @@ export default function App() {
 
   <Route path="/user-form/:formId" element={<UserForm />} />
   <Route path="/pay/:submissionId" element={<UserForm />} />
+  <Route path="/thankyou" element={<ThankYou />} />
 </Routes>
 
 

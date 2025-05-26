@@ -124,60 +124,55 @@ const UserForm = ({ fields: initialFields }) => {
     loadForm();
   }, [formId, initialFields]);
 
-  useEffect(() => {
-    if (!submissionId) return;
+  // useEffect(() => {
+  //     if (!submissionId) return;
 
-    const launchPayment = async () => {
-      try {
-        const { data } = await axios.get(
-          `${API_BASE_URL}/api/submissions/${submissionId}`
-        );
+  //     const launchPayment = async () => {
+  //       try {
+  //         const { data } = await axios.get(`${API_BASE_URL}/api/submissions/${submissionId}`);
 
-        if (!data.paymentDetails?.order_id) {
-          toast.error("Invalid or expired payment link.");
-          return;
-        }
+  //         if (!data.paymentDetails?.order_id) {
+  //           toast.error("Invalid or expired payment link.");
+  //           return;
+  //         }
 
-        const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-          amount: data.paymentDetails.amount,
-          currency: "INR",
-          name: "Form Submission",
-          description: "Form Submission Payment",
-          order_id: data.paymentDetails.order_id,
-          handler: async (response) => {
-            try {
-              await axios.post(
-                `${API_BASE_URL}/api/payment/payment-success/${submissionId}`,
-                {
-                  payment_id: response.razorpay_payment_id,
-                  order_id: response.razorpay_order_id,
-                  signature: response.razorpay_signature,
-                }
-              );
-              toast.success("Payment successful!");
-            } catch (err) {
-              console.error("Payment verification failed", err);
-              toast.error("Payment verification failed.");
-            }
-          },
-          theme: { color: "#3399cc" },
-          prefill: {
-            name: data.responses?.name || "",
-            email: data.responses?.email || "",
-          },
-        };
+  //         const options = {
+  //           key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+  //           amount: data.paymentDetails.amount,
+  //           currency: "INR",
+  //           name: "Form Submission",
+  //           description: "Form Submission Payment",
+  //           order_id: data.paymentDetails.order_id,
+  //           handler: async (response) => {
+  //             try {
+  //               await axios.post(`${API_BASE_URL}/api/payment/payment-success/${submissionId}`, {
+  //                 payment_id: response.razorpay_payment_id,
+  //                 order_id: response.razorpay_order_id,
+  //                 signature: response.razorpay_signature,
+  //               });
+  //               toast.success("Payment successful!");
+  //             } catch (err) {
+  //               console.error("Payment verification failed", err);
+  //               toast.error("Payment verification failed.");
+  //             }
+  //           },
+  //           theme: { color: "#3399cc" },
+  //           prefill: {
+  //             name: data.responses?.name || "",
+  //             email: data.responses?.email || "",
+  //           },
+  //         };
 
-        const razorpay = new window.Razorpay(options);
-        razorpay.open();
-      } catch (err) {
-        console.error("Failed to initiate payment:", err);
-        toast.error("Could not load payment.");
-      }
-    };
+  //         const razorpay = new window.Razorpay(options);
+  //         razorpay.open();
+  //       } catch (err) {
+  //         console.error("Failed to initiate payment:", err);
+  //         toast.error("Could not load payment.");
+  //       }
+  //     };
 
-    launchPayment();
-  }, [submissionId]);
+  //     launchPayment();
+  //   }, [submissionId]);
 
   useEffect(() => {
     if (!formResponses.sameAsPermanent) return;
@@ -312,6 +307,23 @@ const UserForm = ({ fields: initialFields }) => {
     setSelectOthers((prev) => ({ ...prev, [name]: false }));
   };
 
+  const getMaxDateForDob = () => {
+    const today = new Date();
+    today.setFullYear(today.getFullYear() - 20); // Subtract 20 years
+    return today.toISOString().split("T")[0]; // Format as yyyy-mm-dd
+  };
+
+  const getToday = () => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  };
+
+  const getMaxDateForExam = () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 60); // next 60 days only
+    return future.toISOString().split("T")[0];
+  };
+
   const validateForm = async () => {
     const errors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -343,6 +355,16 @@ const UserForm = ({ fields: initialFields }) => {
 
       if (isPhoneField && value && !phoneRegex.test(value)) {
         errors[field.name] = "Invalid contact number.";
+      }
+
+      if (/dob|birth/i.test(field.name)) {
+        const selectedDate = new Date(value);
+        const cutoff = new Date();
+        cutoff.setFullYear(cutoff.getFullYear() - 20);
+
+        if (selectedDate > cutoff) {
+          errors[field.name] = "You must be at least 20 years old to apply.";
+        }
       }
 
       // Phone uniqueness check
@@ -608,6 +630,28 @@ const UserForm = ({ fields: initialFields }) => {
           const data = await axios.post(
             `${API_BASE_URL}/api/payment/create-order/${submissionId}`
           );
+          console.log("data", data);
+          // const options = {
+          // //   key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          // //   amount: data.data.order.amount,
+          // //   currency: "INR",
+          // //   name: "form submission",
+          // //   description: "Form Submission Payment",
+          // //   order_id: data.data.order.id,
+          // //   theme: { color: "#3399cc" },
+          // // };
+
+          // // const razorpay = new window.Razorpay(options);
+          // // razorpay.open();
+          // key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          //   amount: data.data.order.amount,
+          //   currency: "INR",
+          //   name: "form submission",
+          //   description: "Form Submission Payment",
+          //   order_id: data.data.order.id,
+
+          //   theme: { color: "#3399cc" },
+          // };
 
           const options = {
             key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -616,18 +660,57 @@ const UserForm = ({ fields: initialFields }) => {
             name: "form submission",
             description: "Form Submission Payment",
             order_id: data.data.order.id,
-            theme: { color: "#3399cc" },
+            handler: async (response) => {
+              try {
+                await axios.post(
+                  `${API_BASE_URL}/api/payment/payment-success/${submissionId}`,
+                  {
+                    payment_id: response.razorpay_payment_id,
+                    order_id: response.razorpay_order_id,
+                    signature: response.razorpay_signature,
+                  }
+                );
+
+                // Save to sessionStorage for ThankYou page
+                const paymentResponse = {
+                  paymentRequired: true,
+                  formName: form.title || "your form", // replace as needed
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_signature: response.razorpay_signature,
+                  submissionId,
+                };
+                sessionStorage.setItem(
+                  "razorpay_payment_response",
+                  JSON.stringify(paymentResponse)
+                );
+                toast.success("Payment successful!");
+                setTimeout(() => {
+                  window.location.href = "/thankyou";
+                }, 1500);
+              } catch (err) {
+                console.error("Payment verification failed", err);
+                toast.error("Payment verification failed.");
+              }
+            },
           };
 
           const razorpay = new window.Razorpay(options);
           razorpay.open();
+        } else {
+          //  Redirect immediately if no payment required
+          window.location.href = "/thankyou";
         }
-      } else {
-        throw new Error(response.data.message);
-      }
 
-      setIsSubmitting(false);
+        setIsSubmitting(false);
+      }
     } catch (error) {
+      // } else {
+      //   throw new Error(response.data.message);
+      // }
+
+      // setIsSubmitting(false);
+      // }
       console.error("Submission failed:", error);
       const errorMsg =
         error.response?.data?.message ||
@@ -677,25 +760,24 @@ const UserForm = ({ fields: initialFields }) => {
   // };
 
   const shouldDisableField = (fieldName, fieldType) => {
-  const keywords = [
-    "employer",
-    "company",
-    "designation",
-    "job",
-    "work",
-    "employment",
-    "experience_details",
-  ];
+    const keywords = [
+      "employer",
+      "company",
+      "designation",
+      "job",
+      "work",
+      "employment",
+      "experience_details",
+    ];
 
-  // Never disable file fields
-  if (fieldType === "file") return false;
+    // Never disable file fields
+    if (fieldType === "file") return false;
 
-  return (
-    isExperienceZero() &&
-    keywords.some((keyword) => fieldName.toLowerCase().includes(keyword))
-  );
-};
-
+    return (
+      isExperienceZero() &&
+      keywords.some((keyword) => fieldName.toLowerCase().includes(keyword))
+    );
+  };
 
   if (!formData) return <div>Loading...</div>;
 
@@ -750,7 +832,8 @@ const UserForm = ({ fields: initialFields }) => {
               {/* Section Title */}
               <div
                 onClick={() => toggleSection(sectionIndex)}
-               className="flex justify-between items-center bg-gray-200 text-gray-800 text-md cursor-pointer font-bold uppercase px-4 py-2 rounded">
+                className="flex justify-between items-center bg-gray-200 text-gray-800 text-md cursor-pointer font-bold uppercase px-4 py-2 rounded"
+              >
                 <span className="w-full">{section.sectionTitle}</span>
                 <button
                   type="button"
@@ -813,12 +896,35 @@ const UserForm = ({ fields: initialFields }) => {
                                       clipRule="evenodd"
                                     />
                                   </svg>
-                                  <div className="absolute z-10 w-64 p-2 text-xs text-white bg-black rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-1">
-                                    JPG only, max 500KB for photos/signatures.
-                                    PDF only, max 5MB for certificates.
+
+                                  <div className="absolute z-10 w-64 p-2 text-xs text-white bg-black rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-1 pointer-events-none">
+                                    {/(certificate|cert)/i.test(field.name)
+                                      ? "PDF only, max 5MB for certificates."
+                                      : "JPG only, max 500KB for photos/signatures/Id."}
                                   </div>
                                 </div>
                               )}
+                              {field.type === "number" &&
+                                field.label
+                                  ?.toLowerCase()
+                                  .includes("years of experience") && (
+                                  <div className="relative group ml-2 cursor-pointer inline-flex items-center">
+                                    <svg
+                                      className="w-4 h-4 text-gray-500"
+                                      fill="currentColor"
+                                      viewBox="0 0 20 20"
+                                    >
+                                      <path
+                                        fillRule="evenodd"
+                                        d="M18 10A8 8 0 112 10a8 8 0 0116 0zm-9-1h2v5H9V9zm1-4a1 1 0 100 2 1 1 0 000-2z"
+                                        clipRule="evenodd"
+                                      />
+                                    </svg>
+                                    <div className="absolute z-10 w-48 p-2 text-xs text-white bg-black rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-1 pointer-events-none whitespace-normal">
+                                      Write in the number of months.
+                                    </div>
+                                  </div>
+                                )}
                             </label>
 
                             {field.type === "text" && (
@@ -876,7 +982,7 @@ const UserForm = ({ fields: initialFields }) => {
                               />
                             )}
 
-                            {field.type === "number" && (
+                            {/* {field.type === "number" && (
                               <input
                                 type="number"
                                 name={field.name}
@@ -905,18 +1011,105 @@ const UserForm = ({ fields: initialFields }) => {
                                 min={0}
                                 step="1"
                               />
+                            )} */}
+
+                            {field.type === "number" && (
+                              <div className="relative w-full">
+                                <input
+                                  type="number"
+                                  name={field.name}
+                                  value={formResponses[field.name] || ""}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+
+                                    if (/^-/.test(value)) return;
+                                    if (/^0\d+/.test(value)) return;
+
+                                    handleInputChange(e);
+                                  }}
+                                  onWheel={(e) => e.target.blur()}
+                                  onBlur={() =>
+                                    handleFieldValidation(field.name)
+                                  }
+                                  placeholder={
+                                    field.placeholder ||
+                                    `Enter your ${field.label.toLowerCase()}`
+                                  }
+                                  required={field.required}
+                                  disabled={shouldDisableField(field.name)}
+                                  className={`w-full pr-24 border border-gray-300 rounded px-3 py-2 text-sm ${
+                                    shouldDisableField(field.name)
+                                      ? "bg-gray-100 text-gray-800 cursor-not-allowed"
+                                      : "focus:ring-blue-500"
+                                  }`}
+                                  min={0}
+                                  step="1"
+                                />
+
+                                {/* Dropdown inside input (absolute positioned) */}
+                                {field.label
+                                  ?.toLowerCase()
+                                  .includes("years of experience") && (
+                                  <select
+                                    name={`${field.name}_unit`}
+                                    value={
+                                      formResponses[`${field.name}_unit`] ||
+                                      "months"
+                                    }
+                                    onChange={(e) =>
+                                      handleInputChange({
+                                        target: {
+                                          name: `${field.name}_unit`,
+                                          value: e.target.value,
+                                        },
+                                      })
+                                    }
+                                    className="absolute right-1 top-1/2 transform -translate-y-1/2 focus:outline-none border-l border-gray-300 bg-white rounded px-2 py-1 text-sm h-[30px]"
+                                  >
+                                    <option value="months">Months</option>
+                                    <option value="years">Years</option>
+                                  </select>
+                                )}
+
+                                {/* Instructions below input */}
+                                {field.label === "Years of Experience" && (
+                                  <p className="text-xs text-gray-600 mt-1">
+                                    Please enter the number and select months or
+                                    years.
+                                  </p>
+                                )}
+                              </div>
                             )}
 
                             {field.type === "date" && (
-                              <input
-                                type="date"
-                                name={field.name}
-                                value={formResponses[field.name] || ""}
-                                onChange={handleInputChange}
-                                required={field.required}
-                                disabled={shouldDisableField(field.name)}
-                                className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                              />
+                              <div>
+                                <input
+                                  type="date"
+                                  name={field.name}
+                                  value={formResponses[field.name] || ""}
+                                  onChange={handleInputChange}
+                                  required={field.required}
+                                  disabled={shouldDisableField(field.name)}
+                                  min={
+                                    /exam/i.test(field.name)
+                                      ? getToday()
+                                      : undefined
+                                  }
+                                  max={
+                                    /dob|birth/i.test(field.name)
+                                      ? getMaxDateForDob()
+                                      : /exam/i.test(field.name)
+                                      ? getMaxDateForExam()
+                                      : undefined
+                                  }
+                                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                                />
+                                {errors[field.name] && (
+                                  <p className="text-red-500 text-xs mt-1">
+                                    {errors[field.name]}
+                                  </p>
+                                )}
+                              </div>
                             )}
 
                             {field.type === "time" && (
@@ -932,20 +1125,36 @@ const UserForm = ({ fields: initialFields }) => {
                             )}
 
                             {field.type === "file" && (
-                              <input
-                                type="file"
-                                name={field.name}
-                                ref={(ref) =>
-                                  (fileInputRefs.current[field.name] = ref)
-                                }
-                                accept=".jpg,.jpeg,.pdf"
-                                multiple
-                                onChange={handleInputChange}
-                                //  onBlur={() => handleFieldValidation(field.name)}
-                                required={field.required}
-                                // disabled={shouldDisableField(field.name)}
-                                className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                              />
+                              <>
+                                <input
+                                  type="file"
+                                  name={field.name}
+                                  ref={(ref) =>
+                                    (fileInputRefs.current[field.name] = ref)
+                                  }
+                                  accept=".jpg,.jpeg,.pdf"
+                                  multiple
+                                  onChange={handleInputChange}
+                                  //  onBlur={() => handleFieldValidation(field.name)}
+                                  required={field.required}
+                                  disabled={shouldDisableField(
+                                    field.name,
+                                    field.type
+                                  )}
+                                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                                />
+                                {(field.name === "workExperienceCertificates" ||
+                                  /work experience/i.test(field.label)) && (
+                                  <p className="text-xs text-gray-600 mt-1">
+                                    Attach all work experience certificates from
+                                    previous employers. For current employer, if
+                                    work experience certification is not
+                                    available, attach the joining letter as
+                                    proof. Please ensure all work experience
+                                    certificates are merged into a single PDF.
+                                  </p>
+                                )}
+                              </>
                             )}
                             {fileErrors[field.name] &&
                               fileErrors[field.name].map((err, idx) => (
@@ -1078,7 +1287,7 @@ const UserForm = ({ fields: initialFields }) => {
                                 />
                               )}
                             </>
-                          )} */}
+                            )} */}
 
                             {field.type === "select" && (
                               <>

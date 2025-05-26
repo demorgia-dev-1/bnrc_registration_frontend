@@ -421,8 +421,10 @@ function TestUserPanel() {
                       </td>
                       <td className="p-2 border">
                         <button
-                          className={` py-1 px-4 rounded-lg cursor-pointer shadow-lg ${
-                            submission.verified ? "bg-green-600" : "bg-red-600"
+                          className={`py-1 px-4 rounded-lg cursor-pointer shadow-lg ${
+                            submission.verified
+                              ? "bg-green-600 cursor-not-allowed opacity-70"
+                              : "bg-red-600"
                           } text-white`}
                           onClick={() =>
                             handleVerificationToggle(
@@ -430,6 +432,7 @@ function TestUserPanel() {
                               submission.verified
                             )
                           }
+                          disabled={submission.verified} // disable if verified
                         >
                           {submission.verified ? "Verified" : "Not Verified"}
                         </button>
