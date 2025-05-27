@@ -8,55 +8,69 @@ const ThankYou = () => {
   const [isPaymentRequired, setIsPaymentRequired] = useState(false);
   const [formName, setFormName] = useState("");
   const [isVerifying, setIsVerifying] = useState(true);
+  const submissionId =
+    new URLSearchParams(window.location.search).get("submissionId") ||
+    sessionStorage.getItem("submissionId");
+
+  console.log("Submission ID:", submissionId);
 
   useEffect(() => {
-    const verifyPayment = async () => {
-      const data = sessionStorage.getItem("razorpay_payment_response");
-      if (!data) {
-        setIsVerifying(false);
-        return;
-      }
+    if (!submissionId) return;
 
+    let intervalId = null;
+
+    const checkPaymentStatus = async () => {
       try {
-        const parsed = JSON.parse(data);
-        const {
-          paymentRequired,
-          formName: fname,
-          razorpay_payment_id,
-          razorpay_order_id,
-          razorpay_signature,
-          submissionId,
-        } = parsed;
-
-        setIsPaymentRequired(!!paymentRequired);
-
-        if (!paymentRequired) {
-          setFormName(fname || "your form");
-          return;
-        }
-
-        const res = await axios.post(
-          `${API_BASE_URL}/api/payment/payment-success/${submissionId}`,
-          {
-            payment_id: razorpay_payment_id,
-            order_id: razorpay_order_id,
-            signature: razorpay_signature,
-          }
+        const response = await axios.get(
+          `${API_BASE_URL}/api/payment/submissions/${submissionId}/status`
         );
 
-        toast.success("Payment verified!");
-        setPaymentVerified(true);
-      } catch (err) {
-        console.error("Verification failed", err);
-        toast.error("Payment verification failed.");
-      } finally {
-        sessionStorage.removeItem("razorpay_payment_response");
+        const {
+          paymentRequired,
+          paymentStatus,
+          formName: fetchedFormName,
+        } = response.data;
+
+        setFormName(fetchedFormName || "");
+
+        if (!paymentRequired) {
+          setPaymentVerified(true);
+          setIsPaymentRequired(false);
+          setIsVerifying(false);
+          if (intervalId) clearInterval(intervalId);
+        } else {
+          setIsPaymentRequired(true);
+          if (paymentStatus === "Completed") {
+            setPaymentVerified(true);
+            setIsVerifying(false);
+            if (intervalId) clearInterval(intervalId);
+          } else if (paymentStatus === "Failed") {
+            setPaymentVerified(false);
+            setIsVerifying(false);
+            if (intervalId) clearInterval(intervalId);
+          } else {
+            setIsVerifying(true);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to check payment status", error);
+        toast.error("Failed to verify payment status");
         setIsVerifying(false);
+        if (intervalId) clearInterval(intervalId);
       }
     };
 
-    verifyPayment();
-  }, []);
+    // Initial check
+    checkPaymentStatus();
+
+    // Poll every 3 seconds
+    intervalId = setInterval(checkPaymentStatus, 3000);
+
+    // Cleanup on unmount
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [submissionId]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white text-center p-6">
@@ -69,12 +83,12 @@ const ThankYou = () => {
       ) : isPaymentRequired ? (
         <p className="text-lg mb-6">
           Your payment was{" "}
-          <strong>{paymentVerified ? "successful" : "submitted"}</strong> and
-          your form has been received.
+          <strong>{paymentVerified ? "successful" : "unsuccessful"}</strong> and
+          your <strong>{formName || "form"}</strong> form has been received.
         </p>
       ) : (
         <p className="text-lg mb-6">
-          Your <strong>{formName || "form"}</strong> has been successfully
+          Your <strong>{formName || "form"}</strong> form has been successfully
           submitted.
         </p>
       )}

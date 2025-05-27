@@ -21,6 +21,65 @@ const UserForm = ({ fields: initialFields }) => {
   const [fileErrors, setFileErrors] = useState([]);
   const [visibleSections, setVisibleSections] = useState([]);
 
+const [examDateCounts, setExamDateCounts] = useState({
+  "2025-05-28": 0,
+  "2025-05-29": 0,
+  "2025-05-30": 0,
+});
+const allowedExamDates = ["2025-05-28", "2025-05-29", "2025-05-30"];
+
+const fetchExamDateCount = async (dateStr) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/exam-date-count?date=${dateStr}`);
+    if (!response.ok) throw new Error("Failed to fetch");
+    const data = await response.json();
+    return data.count || 0;
+  } catch (err) {
+    console.error("Error fetching exam date count:", err);
+    return -1; // indicates an error
+  }
+};
+
+const handleExamDateBlur = async (e) => {
+  const { name, value } = e.target;
+
+  if (/exam/i.test(name) && value) {
+    if (!allowedExamDates.includes(value)) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "Only 28th, 29th, or 30th May 2025 are allowed for exams.",
+      }));
+      return;
+    }
+
+    const count = await fetchExamDateCount(value);
+
+    if (count === -1) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "Error checking date availability. Try again later.",
+      }));
+      return;
+    }
+
+    if (count >= 4) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "This date is already full. Please select another.",
+      }));
+    } else {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+
+    // Update local state (for display purposes only if needed)
+    setExamDateCounts((prev) => ({
+      ...prev,
+      [value]: count,
+    }));
+  }
+};
+
+
   const fileInputRefs = useRef({});
   const fieldRefs = useRef({});
   const sectionRefs = useRef([]);
@@ -124,55 +183,62 @@ const UserForm = ({ fields: initialFields }) => {
     loadForm();
   }, [formId, initialFields]);
 
-  // useEffect(() => {
-  //     if (!submissionId) return;
+  useEffect(() => {
+    if (!submissionId) return;
 
-  //     const launchPayment = async () => {
-  //       try {
-  //         const { data } = await axios.get(`${API_BASE_URL}/api/submissions/${submissionId}`);
+    const launchPayment = async () => {
+      try {
+        const { data } = await axios.get(
+          `${API_BASE_URL}/api/submissions/${submissionId}`
+        );
 
-  //         if (!data.paymentDetails?.order_id) {
-  //           toast.error("Invalid or expired payment link.");
-  //           return;
-  //         }
+        if (!data.paymentDetails?.order_id) {
+          toast.error("Invalid or expired payment link.");
+          return;
+        }
 
-  //         const options = {
-  //           key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-  //           amount: data.paymentDetails.amount,
-  //           currency: "INR",
-  //           name: "Form Submission",
-  //           description: "Form Submission Payment",
-  //           order_id: data.paymentDetails.order_id,
-  //           handler: async (response) => {
-  //             try {
-  //               await axios.post(`${API_BASE_URL}/api/payment/payment-success/${submissionId}`, {
-  //                 payment_id: response.razorpay_payment_id,
-  //                 order_id: response.razorpay_order_id,
-  //                 signature: response.razorpay_signature,
-  //               });
-  //               toast.success("Payment successful!");
-  //             } catch (err) {
-  //               console.error("Payment verification failed", err);
-  //               toast.error("Payment verification failed.");
-  //             }
-  //           },
-  //           theme: { color: "#3399cc" },
-  //           prefill: {
-  //             name: data.responses?.name || "",
-  //             email: data.responses?.email || "",
-  //           },
-  //         };
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          amount: data.paymentDetails.amount,
+          currency: "INR",
+          name: "Form Submission",
+          description: "Form Submission Payment",
+          order_id: data.paymentDetails.order_id,
+          handler: async (response) => {
+            try {
+              await axios.post(
+                `${API_BASE_URL}/api/payment/payment-success/${submissionId}`,
+                {
+                  payment_id: response.razorpay_payment_id,
+                  order_id: response.razorpay_order_id,
+                  signature: response.razorpay_signature,
+                }
+              );
 
-  //         const razorpay = new window.Razorpay(options);
-  //         razorpay.open();
-  //       } catch (err) {
-  //         console.error("Failed to initiate payment:", err);
-  //         toast.error("Could not load payment.");
-  //       }
-  //     };
+              toast.success("Payment successful!");
+              window.location.href = "/thankyou";
+            } catch (err) {
+              console.error("Payment verification failed", err);
+              toast.error("Payment verification failed.");
+            }
+          },
+          theme: { color: "#3399cc" },
+          prefill: {
+            name: data.responses?.name || "",
+            email: data.responses?.email || "",
+          },
+        };
 
-  //     launchPayment();
-  //   }, [submissionId]);
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+      } catch (err) {
+        console.error("Failed to initiate payment:", err);
+        toast.error("Could not load payment.");
+      }
+    };
+
+    launchPayment();
+  }, [submissionId]);
 
   useEffect(() => {
     if (!formResponses.sameAsPermanent) return;
@@ -329,6 +395,8 @@ const UserForm = ({ fields: initialFields }) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^[6-9]\d{9}$/;
     const aadhaarRegex = /^\d{12}$/;
+ const allowedExamDates = ["2025-05-28", "2025-05-29", "2025-05-30"];
+  const MAX_EXAM_BOOKINGS_PER_DATE = 4;
 
     const allFields =
       form?.sections?.flatMap((section) => section.fields) || [];
@@ -366,6 +434,27 @@ const UserForm = ({ fields: initialFields }) => {
           errors[field.name] = "You must be at least 20 years old to apply.";
         }
       }
+
+      // Add exam date validation here:
+    if (/exam.*date/i.test(field.name)) {
+      if (!value || !allowedExamDates.includes(value)) {
+        errors[field.name] = "Only 28th, 29th, or 30th May 2025 are allowed for exams.";
+      } else {
+        try {
+          const response = await axios.get(`${API_BASE_URL}/api/exam-date-count`, {
+            params: { date: value }
+          });
+          const count = response.data.count || 0;
+
+          if (count >= MAX_EXAM_BOOKINGS_PER_DATE) {
+            errors[field.name] = "This exam date is already full. Please select another.";
+          }
+        } catch (err) {
+          console.error("Exam date availability check failed:", err);
+          errors[field.name] = "Unable to verify exam date availability. Please try again later.";
+        }
+      }
+    }
 
       // Phone uniqueness check
       if (isPhoneField && value) {
@@ -426,7 +515,7 @@ const UserForm = ({ fields: initialFields }) => {
         }
       }
     }
-
+  
     //  Slot capacity check
     const slotFieldName = Object.keys(formResponses).find((k) =>
       k.trim().toLowerCase().includes("slot")
@@ -579,7 +668,7 @@ const UserForm = ({ fields: initialFields }) => {
             /phone/i.test(fieldName) ||
             /aadhaar/i.test(fieldName)
           ) {
-            value = value.toLowerCase(); // optional, if backend does it
+            value = value.toLowerCase();
           }
         }
 
@@ -626,33 +715,12 @@ const UserForm = ({ fields: initialFields }) => {
         });
 
         const submissionId = response.data.submission._id;
+        console.log("Submission ID from server:", submissionId);
         if (response.data.paymentRequired) {
           const data = await axios.post(
             `${API_BASE_URL}/api/payment/create-order/${submissionId}`
           );
           console.log("data", data);
-          // const options = {
-          // //   key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-          // //   amount: data.data.order.amount,
-          // //   currency: "INR",
-          // //   name: "form submission",
-          // //   description: "Form Submission Payment",
-          // //   order_id: data.data.order.id,
-          // //   theme: { color: "#3399cc" },
-          // // };
-
-          // // const razorpay = new window.Razorpay(options);
-          // // razorpay.open();
-          // key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-          //   amount: data.data.order.amount,
-          //   currency: "INR",
-          //   name: "form submission",
-          //   description: "Form Submission Payment",
-          //   order_id: data.data.order.id,
-
-          //   theme: { color: "#3399cc" },
-          // };
-
           const options = {
             key: import.meta.env.VITE_RAZORPAY_KEY_ID,
             amount: data.data.order.amount,
@@ -671,26 +739,17 @@ const UserForm = ({ fields: initialFields }) => {
                   }
                 );
 
-                // Save to sessionStorage for ThankYou page
-                const paymentResponse = {
-                  paymentRequired: true,
-                  formName: form.title || "your form", // replace as needed
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_signature: response.razorpay_signature,
-                  submissionId,
-                };
-                sessionStorage.setItem(
-                  "razorpay_payment_response",
-                  JSON.stringify(paymentResponse)
+                sessionStorage.setItem("submissionId", submissionId);
+                console.log(
+                  "Redirecting to thankyou with submissionId:",
+                  submissionId
                 );
-                toast.success("Payment successful!");
-                setTimeout(() => {
-                  window.location.href = "/thankyou";
-                }, 1500);
+                window.location.href = `/thankyou?submissionId=${submissionId}`;
               } catch (err) {
-                console.error("Payment verification failed", err);
-                toast.error("Payment verification failed.");
+                console.error("Payment notification failed", err);
+                toast.error(
+                  "Payment notification failed. Please contact support."
+                );
               }
             },
           };
@@ -698,19 +757,13 @@ const UserForm = ({ fields: initialFields }) => {
           const razorpay = new window.Razorpay(options);
           razorpay.open();
         } else {
-          //  Redirect immediately if no payment required
-          window.location.href = "/thankyou";
+          sessionStorage.setItem("submissionId", submissionId);
+          window.location.href = `/thankyou?submissionId=${submissionId}`;
         }
 
         setIsSubmitting(false);
       }
     } catch (error) {
-      // } else {
-      //   throw new Error(response.data.message);
-      // }
-
-      // setIsSubmitting(false);
-      // }
       console.error("Submission failed:", error);
       const errorMsg =
         error.response?.data?.message ||
@@ -809,12 +862,15 @@ const UserForm = ({ fields: initialFields }) => {
             <h3
               key={index}
               className="text-sm font-semibold capitalize py-1 px-2 bg-gray-200 text-gray-800 rounded mb-1 cursor-pointer hover:bg-gray-300"
-              onClick={() =>
+              onClick={() => {
                 sectionRefs.current[index]?.scrollIntoView({
                   behavior: "smooth",
                   block: "start",
-                })
-              }
+                });
+                if (!visibleSections[index]) {
+                  toggleSection(index);
+                }
+              }}
             >
               {section.sectionTitle}
             </h3>
@@ -837,7 +893,10 @@ const UserForm = ({ fields: initialFields }) => {
                 <span className="w-full">{section.sectionTitle}</span>
                 <button
                   type="button"
-                  onClick={() => toggleSection(sectionIndex)}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent bubbling to the parent div
+                    toggleSection(sectionIndex);
+                  }}
                   className="ml-2 text-2xl text-black w-6 h-6 flex items-center justify-center cursor-pointer"
                   title={visibleSections[sectionIndex] ? "Minimize" : "Expand"}
                 >
@@ -1081,7 +1140,7 @@ const UserForm = ({ fields: initialFields }) => {
                               </div>
                             )}
 
-                            {field.type === "date" && (
+                            {/* {field.type === "date" && (
                               <div>
                                 <input
                                   type="date"
@@ -1110,7 +1169,41 @@ const UserForm = ({ fields: initialFields }) => {
                                   </p>
                                 )}
                               </div>
-                            )}
+                            )} */}
+
+                            {field.type === "date" && (
+  <div>
+    <input
+      type="date"
+      name={field.name}
+      value={formResponses[field.name] || ""}
+      onChange={handleInputChange}
+      onBlur={handleExamDateBlur}
+      required={field.required}
+      disabled={shouldDisableField(field.name)}
+      min={
+        /exam/i.test(field.name)
+          ? getToday()
+          : undefined
+      }
+      max={
+        /dob|birth/i.test(field.name)
+          ? getMaxDateForDob()
+          : /exam/i.test(field.name)
+          ? getMaxDateForExam()
+          : undefined
+      }
+      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+    />
+    {field.name.toLowerCase().includes("exam") && (
+  <p className="text-xs text-gray-500 mt-1">
+    Allowed dates: <strong>28, 29, 30 May 2025</strong> — only if slots are available.
+  </p>
+)}
+
+  </div>
+)}
+
 
                             {field.type === "time" && (
                               <input
