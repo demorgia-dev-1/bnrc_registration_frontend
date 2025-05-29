@@ -1,11 +1,14 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import UserForm from "./components/UserForm";
-import AdminPanel from "./components/AdminPanel";
+import {AdminPanel} from "./components/AdminPanel";
 import Login from "./components/Login";
 import { ToastContainer } from "react-toastify";
 import TestUserPanel from "./components/TestUserPanel";
 import "react-toastify/dist/ReactToastify.css";
 import ThankYou from "./components/Thankyou";
+import AllExamResults from "./components/AllExamResults";
+import AdmitCard from "./components/AdmitCard";
+import GenerateAdmitCard from "./components/GenerateAdmitCard";
 
 export default function App() {
   const currentUser = JSON.parse(sessionStorage.getItem("user"));
@@ -58,6 +61,9 @@ export default function App() {
   <Route path="/user-form/:formId" element={<UserForm />} />
   <Route path="/pay/:submissionId" element={<UserForm />} />
   <Route path="/thankyou" element={<ThankYou />} />
+  <Route path="/results" element={<AllExamResults />} />
+  <Route path="/admitcard/:id" element={<AdmitCard />} />
+  <Route path="/generate-admit-card/:id" element={<GenerateAdmitCard />} />
 </Routes>
 
 

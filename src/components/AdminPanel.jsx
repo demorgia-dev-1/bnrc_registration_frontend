@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../api/api";
 import { toast } from "react-toastify";
+import CreateResult from "./CreateExamResults";
 
 const Modal = ({ show, onClose, data, children }) => {
   const [previewImage, setPreviewImage] = useState(null);
@@ -129,7 +130,7 @@ const Modal = ({ show, onClose, data, children }) => {
   );
 };
 
-const AdminPanel = () => {
+export const AdminPanel = () => {
   const [formName, setFormName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -155,6 +156,7 @@ const AdminPanel = () => {
   const [sections, setSections] = useState([{ name: "", fields: [] }]);
   const [instructionsTitle, setInstructionsTitle] = useState("");
   const [generalInstructions, setGeneralInstructions] = useState("");
+  const [iscreateResult, setIsCreateResult] = useState(false)
 
   const navigate = useNavigate();
 
@@ -166,6 +168,7 @@ const AdminPanel = () => {
     const fetchForms = async () => {
       try {
         const token = sessionStorage.getItem("token");
+        console.log("token", token);
         const res = await fetch(`${API_BASE_URL}/api/forms`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -185,6 +188,7 @@ const AdminPanel = () => {
     const fetchSubmissions = async () => {
       try {
         const token = sessionStorage.getItem("token");
+        console.log("token", token);
         const res = await axios.get(`${API_BASE_URL}/api/submissions`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -225,7 +229,7 @@ const AdminPanel = () => {
   const downloadFormExcel = async () => {
     try {
       const token = sessionStorage.getItem("token");
-
+      console.log("token", token);
       const response = await axios.get(
         `${API_BASE_URL}/api/download/forms-excel`,
         {
@@ -268,6 +272,7 @@ const AdminPanel = () => {
   const downloadSubmissionExcel = async (formId) => {
     try {
       const token = sessionStorage.getItem("token");
+      console.log("token", token);
       const response = await fetch(
         `${API_BASE_URL}/api/download/submissions-excel?formId=${formId}`,
         {
@@ -483,12 +488,6 @@ const AdminPanel = () => {
     updated[sectionIndex].fields[fieldIndex][key] = value;
     setSections(updated);
   };
-
-  // const handleRemoveField = (sectionIndex, fieldIndex) => {
-  //   const updated = [...sections];
-  //   updated[sectionIndex].fields.splice(fieldIndex, 1);
-  //   setSections(updated);
-  // };
 
   const handleRemoveField = (sectionIndex, fieldIndex) => {
   setSections((prevSections) => {
@@ -706,12 +705,41 @@ const AdminPanel = () => {
             Download Submissions
           </button>
           <button
+        onClick={() => setIsCreateResult(true)}
+        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        Create Result
+      </button>
+{iscreateResult && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
+          <div className="bg-white rounded-lg shadow-xl w-auto max-h-[90vh] overflow-y-auto p-6">
+            <button
+             onClick={() => setIsCreateResult(false)}
+              className="text-red-600 text-2xl font-bold cursor-pointer right-4"
+            >
+              ×
+            </button>
+            <h2 className="text-2xl font-semibold mb-4 text-center">Create Result</h2>
+            <CreateResult />
+          </div>
+        </div>
+      )}
+          <button
+  onClick={() => window.open('/results', '_blank')}
+  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+>
+  Show Results
+</button>
+          <button
             onClick={handleLogout}
             className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
           >
             Logout
           </button>
+
+
         </div>
+        {/* <CreateResult />  */}
         <form
           onSubmit={handleSubmit}
           className="mt-10 bg-white bg-opacity-95 p-10 rounded-l-lg shadow-lg w-full max-w-lg max-h-[80vh] overflow-y-auto"
@@ -1125,4 +1153,4 @@ const AdminPanel = () => {
   );
 };
 
-export default AdminPanel;
+// export default AdminPanel;

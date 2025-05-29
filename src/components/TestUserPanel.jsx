@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "../api/api";
 
+
 import { useNavigate } from "react-router-dom";
+import CreateResult from "./CreateExamResults";
 
 const Modal = ({ show, onClose, data, children }) => {
   const [previewImage, setPreviewImage] = useState(null);
@@ -139,6 +141,8 @@ function TestUserPanel() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [filteredSubmissions, setFilteredSubmissions] = useState([]);
+  const [iscreateResult, setIsCreateResult] = useState(false)
+  
 
   const navigate = useNavigate();
 
@@ -318,6 +322,33 @@ function TestUserPanel() {
                 disabled={!selectedFormId}
               >
                 Download Submissions Excel
+              </button>
+                        <button
+                      onClick={() => setIsCreateResult(true)}
+                      className="rounded-lg px-6 py-3 font-semibold shadow-lg transition duration-300 cursor-pointer bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Create Result
+                    </button>
+              {iscreateResult && (
+                      <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
+                        <div className="bg-white rounded-lg shadow-xl w-auto max-h-[90vh] overflow-y-auto p-6">
+                          <button
+                           onClick={() => setIsCreateResult(false)}
+                            className="text-red-600 text-2xl font-bold cursor-pointer right-4"
+                          >
+                            ×
+                          </button>
+                          <h2 className="text-2xl font-semibold mb-4 text-center">Create Result</h2>
+                          <CreateResult />
+                        </div>
+                      </div>
+                    )}
+              
+                        <button
+                onClick={() => window.open('/results', '_blank')}
+                className="rounded-lg px-6 py-3 font-semibold shadow-lg transition duration-300 cursor-pointer bg-green-600 text-white hover:bg-green-700"
+              >
+                Show Results
               </button>
               <button
                 onClick={handleLogout}
