@@ -28,56 +28,56 @@ const [examDateCounts, setExamDateCounts] = useState({
 });
 const allowedExamDates = ["2025-05-28", "2025-05-29", "2025-05-30"];
 
-const fetchExamDateCount = async (dateStr) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/exam-date-count?date=${dateStr}`);
-    if (!response.ok) throw new Error("Failed to fetch");
-    const data = await response.json();
-    return data.count || 0;
-  } catch (err) {
-    console.error("Error fetching exam date count:", err);
-    return -1; // indicates an error
-  }
-};
+// const fetchExamDateCount = async (dateStr) => {
+//   try {
+//     const response = await fetch(`${API_BASE_URL}/api/exam-date-count?date=${dateStr}`);
+//     if (!response.ok) throw new Error("Failed to fetch");
+//     const data = await response.json();
+//     return data.count || 0;
+//   } catch (err) {
+//     console.error("Error fetching exam date count:", err);
+//     return -1; // indicates an error
+//   }
+// };
 
-const handleExamDateBlur = async (e) => {
-  const { name, value } = e.target;
+// const handleExamDateBlur = async (e) => {
+//   const { name, value } = e.target;
 
-  if (/exam/i.test(name) && value) {
-    if (!allowedExamDates.includes(value)) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "Only 28th, 29th, or 30th May 2025 are allowed for exams.",
-      }));
-      return;
-    }
+//   if (/exam/i.test(name) && value) {
+//     if (!allowedExamDates.includes(value)) {
+//       setErrors((prev) => ({
+//         ...prev,
+//         [name]: "Only 28th, 29th, or 30th May 2025 are allowed for exams.",
+//       }));
+//       return;
+//     }
 
-    const count = await fetchExamDateCount(value);
+//     const count = await fetchExamDateCount(value);
 
-    if (count === -1) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "Error checking date availability. Try again later.",
-      }));
-      return;
-    }
+//     if (count === -1) {
+//       setErrors((prev) => ({
+//         ...prev,
+//         [name]: "Error checking date availability. Try again later.",
+//       }));
+//       return;
+//     }
 
-    if (count >= 4) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "This date is already full. Please select another.",
-      }));
-    } else {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+//     if (count >= 4) {
+//       setErrors((prev) => ({
+//         ...prev,
+//         [name]: "This date is already full. Please select another.",
+//       }));
+//     } else {
+//       setErrors((prev) => ({ ...prev, [name]: "" }));
+//     }
 
-    // Update local state (for display purposes only if needed)
-    setExamDateCounts((prev) => ({
-      ...prev,
-      [value]: count,
-    }));
-  }
-};
+//     // Update local state (for display purposes only if needed)
+//     setExamDateCounts((prev) => ({
+//       ...prev,
+//       [value]: count,
+//     }));
+//   }
+// };
 
 
   const fileInputRefs = useRef({});
@@ -435,26 +435,26 @@ const handleExamDateBlur = async (e) => {
         }
       }
 
-      // Add exam date validation here:
-    if (/exam.*date/i.test(field.name)) {
-      if (!value || !allowedExamDates.includes(value)) {
-        errors[field.name] = "Only 28th, 29th, or 30th May 2025 are allowed for exams.";
-      } else {
-        try {
-          const response = await axios.get(`${API_BASE_URL}/api/exam-date-count`, {
-            params: { date: value }
-          });
-          const count = response.data.count || 0;
+    //   // Add exam date validation here:
+    // if (/exam.*date/i.test(field.name)) {
+    //   if (!value || !allowedExamDates.includes(value)) {
+    //     errors[field.name] = "Only 28th, 29th, or 30th May 2025 are allowed for exams.";
+    //   } else {
+    //     try {
+    //       const response = await axios.get(`${API_BASE_URL}/api/exam-date-count`, {
+    //         params: { date: value }
+    //       });
+    //       const count = response.data.count || 0;
 
-          if (count >= MAX_EXAM_BOOKINGS_PER_DATE) {
-            errors[field.name] = "This exam date is already full. Please select another.";
-          }
-        } catch (err) {
-          console.error("Exam date availability check failed:", err);
-          errors[field.name] = "Unable to verify exam date availability. Please try again later.";
-        }
-      }
-    }
+    //       if (count >= MAX_EXAM_BOOKINGS_PER_DATE) {
+    //         errors[field.name] = "This exam date is already full. Please select another.";
+    //       }
+    //     } catch (err) {
+    //       console.error("Exam date availability check failed:", err);
+    //       errors[field.name] = "Unable to verify exam date availability. Please try again later.";
+    //     }
+    //   }
+    // }
 
       // Phone uniqueness check
       if (isPhoneField && value) {
@@ -1140,7 +1140,7 @@ const handleExamDateBlur = async (e) => {
                               </div>
                             )}
 
-                            {/* {field.type === "date" && (
+                            {field.type === "date" && (
                               <div>
                                 <input
                                   type="date"
@@ -1169,9 +1169,9 @@ const handleExamDateBlur = async (e) => {
                                   </p>
                                 )}
                               </div>
-                            )} */}
+                            )}
 
-                            {field.type === "date" && (
+                            {/* {field.type === "date" && (
   <div>
     <input
       type="date"
@@ -1202,7 +1202,7 @@ const handleExamDateBlur = async (e) => {
 )}
 
   </div>
-)}
+)} */}
 
 
                             {field.type === "time" && (
