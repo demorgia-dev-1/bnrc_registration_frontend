@@ -59,16 +59,16 @@ const AdmitCard = ({data}) => {
   if (!formData) return <p className="text-center text-red-500">Data not found.</p>;
 
   return (
-    <div className="max-w-5xl mt-10 mx-auto p-6 border border-black bg-white text-sm font-sans">
+    <table className="max-w-5xl mt-10 mx-auto p-6 border border-black bg-white text-sm font-sans">
       {/* Header */}
       <div className="flex justify-between items-center mb-6 text-center">
-        <img src="/BNRC.png" alt="Left Logo" className="w-20 h-20 object-contain" />
+        <img src="/BNRC.png" alt="Left Logo" className="w-20 h-20 object-contain ml-5" />
         <h2 className="text-lg font-bold uppercase">Competency Certification Admit Card</h2>
-        <img src="/Health Dept.png" alt="Right Logo" className="w-20 h-20 object-contain" />
+        <img src="/Health Dept.png" alt="Right Logo" className="w-20 h-20 object-contain mr-5 mt-5" />
       </div>
 
       {/* Candidate Details */}
-      <table className="w-full border border-black border-collapse mb-6">
+      <table className="w-full mb-6">
         <thead>
           <tr className="bg-gray-200 text-center font-semibold">
             <td colSpan="4" className="border border-black p-2">CANDIDATE DETAILS</td>
@@ -98,7 +98,7 @@ const AdmitCard = ({data}) => {
           </tr>
           <tr>
             <td className="border border-black p-2">Father’s Name</td>
-            <td colSpan="2" className="border border-black p-2">Father's Full Name</td>
+            <td colSpan="2" className="border border-black p-2">{formData.responses["father's_name"]}</td>
           </tr>
           <tr>
             <td className="border border-black p-2">Date of Birth</td>
@@ -125,50 +125,60 @@ const AdmitCard = ({data}) => {
           </tr>
           <tr>
             <td className="border border-black p-2">Competency Certification Level</td>
-            <td className="border border-black p-2">{formData.responses.dob}</td>
+            <td className="border border-black p-2">Level A</td>
             <td className="border border-black p-2">Specialization</td>
             <td className="border border-black p-2">{formData.responses.competency_package_for_assessment}</td>
           </tr>
           <tr>
             <td className="border border-black p-2">Type of Assessment</td>
-            <td className="border border-black p-2">{formData.formName}</td>
+            <td className="border border-black p-2">CBT</td>
             <td className="border border-black p-2">Exam Date</td>
             <td className="border border-black p-2">{formData.responses.exam_date_selection}</td>
           </tr>
           <tr>
             <td className="border border-black p-2">Exam Time</td>
-            <td className="border border-black p-2">HH:MM AM/PM</td>
+            <td className="border border-black p-2">11:00 AM</td>
             <td className="border border-black p-2">Reporting Time</td>
-            <td className="border border-black p-2">HH:MM AM/PM</td>
+            <td className="border border-black p-2">10:00 AM</td>
           </tr>
           <tr>
             <td className="border border-black p-2">Exam Centre Name</td>
             <td className="border border-black p-2">{formData.responses.preferred_examination_center}</td>
             <td className="border border-black p-2">Exam Centre Address</td>
-            <td className="border border-black p-2">Full Address of the Exam Centre</td>
+            <td className="border border-black p-2">GNM Nursing Institute, Nalanda Medical College and hospital (NMCH), Agamkuan, Patna -800007</td>
           </tr>
         </tbody>
       </table>
 
-      {/* Instructions */}
-      <div>
-        <h3 className="font-bold mb-2">INSTRUCTIONS</h3>
-        <ol className="list-decimal pl-5 space-y-1 text-justify text-sm leading-relaxed">
-          <li>Admit card must be printed on A4 size paper using a laser printer.</li>
-          <li>Bring one valid photo ID proof to the exam center.</li>
-          <li>Photo on ID must match the uploaded photo.</li>
-          <li>This admit card is valid only for the assigned date/session.</li>
-          <li>No requests for change in exam date/time/location will be entertained.</li>
-          <li>Report at least 30 minutes before the exam time.</li>
-          <li>Electronic gadgets are strictly prohibited inside the exam hall.</li>
-          <li>Rough sheets will be provided in the exam hall.</li>
-          <li>Entry is not allowed without a printed admit card.</li>
-          <li>Any malpractice will lead to disqualification.</li>
-          <li>Parents/Guardians are not allowed inside the exam premises.</li>
-          <li>Follow COVID-19 protocols during the exam.</li>
-        </ol>
-      </div>
-    </div>
+<div className="w-full mb-6">
+  <h3 className="font-bold text-center border border-black py-2 mb-0 bg-gray-100">INSTRUCTIONS</h3>
+  <table className="w-full border border-black border-t-0">
+    <tbody>
+      {[
+        "Admit Card must be printed on A4 size paper using a laser printer. The Admit Card is valid only if the candidate’s photograph and signature are clearly printed and not smudged or damaged.",
+        "Candidates should bring the admit card along with any one of the following valid photo ID proof (original). (Aadhaar Card/Voter ID Card/PAN Card/Passport/Driving License/any other Govt approved photo ID). The name on the photo ID should be the same as that on the Admit card.",
+        "In case of any discrepancy in the photograph, candidate should bring one recent passport size photograph.",
+        "This Admit Card is valid only for the test date and session mentioned on it. It cannot be used for any other session or centre & is valid only on the exam date and time.",
+        "No request for change in examination centre, date, or session will be entertained under any circumstances.",
+        "Candidates will not be allowed to enter the test centre after the gate closure time (HH:MM PM). Candidates must report to the test centre by MM minutes before the commencement of examination. Entry into the test centre will not be allowed after reporting time mentioned above.",
+        "Admit Card is provisional, subject to the condition that the candidate fulfils all eligibility criteria as mentioned in the official notification. Candidature is liable to be cancelled at any stage if found ineligible.",
+        "Possession and use of electronic devices/jewelry/jackets/calculators/watch or items containing metal are strictly prohibited inside the test centre premises. Simple dressing with plain cardigans/sweaters are recommended. A rough sheet will be provided to candidates.",
+        "At test centre entry you have to undergo a mandatory frisking activity, objectionable item (if any) is identified, you would be requested to leave it behind before entering the test centre. Candidates showing non-cooperation may get barred from appearing for the test.",
+        "Guardians/relatives/friends accompanying the candidates are not allowed inside the test centre.",
+        "No malpractice will be tolerated inside the test centre. Decision of venue officials will be final.",
+        "Follow all COVID-19 protocols if applicable."
+      ].map((text, idx) => (
+        <tr key={idx}>
+          <td className="border-t border-black p-2 text-justify text-sm leading-relaxed">
+            <span className="font-semibold">{idx + 1}.</span> {text}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+    </table>
   );
 };
 

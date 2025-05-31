@@ -20,65 +20,7 @@ const UserForm = ({ fields: initialFields }) => {
   const [slotCounts, setSlotCounts] = useState({});
   const [fileErrors, setFileErrors] = useState([]);
   const [visibleSections, setVisibleSections] = useState([]);
-
-const [examDateCounts, setExamDateCounts] = useState({
-  "2025-05-28": 0,
-  "2025-05-29": 0,
-  "2025-05-30": 0,
-});
-const allowedExamDates = ["2025-05-28", "2025-05-29", "2025-05-30"];
-
-// const fetchExamDateCount = async (dateStr) => {
-//   try {
-//     const response = await fetch(`${API_BASE_URL}/api/exam-date-count?date=${dateStr}`);
-//     if (!response.ok) throw new Error("Failed to fetch");
-//     const data = await response.json();
-//     return data.count || 0;
-//   } catch (err) {
-//     console.error("Error fetching exam date count:", err);
-//     return -1; // indicates an error
-//   }
-// };
-
-// const handleExamDateBlur = async (e) => {
-//   const { name, value } = e.target;
-
-//   if (/exam/i.test(name) && value) {
-//     if (!allowedExamDates.includes(value)) {
-//       setErrors((prev) => ({
-//         ...prev,
-//         [name]: "Only 28th, 29th, or 30th May 2025 are allowed for exams.",
-//       }));
-//       return;
-//     }
-
-//     const count = await fetchExamDateCount(value);
-
-//     if (count === -1) {
-//       setErrors((prev) => ({
-//         ...prev,
-//         [name]: "Error checking date availability. Try again later.",
-//       }));
-//       return;
-//     }
-
-//     if (count >= 4) {
-//       setErrors((prev) => ({
-//         ...prev,
-//         [name]: "This date is already full. Please select another.",
-//       }));
-//     } else {
-//       setErrors((prev) => ({ ...prev, [name]: "" }));
-//     }
-
-//     // Update local state (for display purposes only if needed)
-//     setExamDateCounts((prev) => ({
-//       ...prev,
-//       [value]: count,
-//     }));
-//   }
-// };
-
+  const [dateErrors, setDateErrors] = useState({});
 
   const fileInputRefs = useRef({});
   const fieldRefs = useRef({});
@@ -303,7 +245,27 @@ const allowedExamDates = ["2025-05-28", "2025-05-29", "2025-05-30"];
         .map((option) => option.value);
     } else {
       newValue = value;
-    }
+      // ✅ Weekend check for exam fields
+    if (type === "date" && /exam/i.test(name)) {
+  const selectedDate = new Date(value);
+  const day = selectedDate.getDay();
+
+  if (day === 0 || day === 6) {
+    setDateErrors((prev) => ({
+      ...prev,
+      [name]: "Weekends (Saturday and Sunday) are not allowed for exams.",
+    }));
+    return;
+  } else {
+    setDateErrors((prev) => ({
+      ...prev,
+      [name]: "", // clear previous error
+    }));
+  }
+}
+
+  }
+    
 
     if (/slot/i.test(name)) {
       const normalizedValue = value?.trim().toLowerCase();
@@ -395,8 +357,6 @@ const allowedExamDates = ["2025-05-28", "2025-05-29", "2025-05-30"];
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^[6-9]\d{9}$/;
     const aadhaarRegex = /^\d{12}$/;
- const allowedExamDates = ["2025-05-28", "2025-05-29", "2025-05-30"];
-  const MAX_EXAM_BOOKINGS_PER_DATE = 4;
 
     const allFields =
       form?.sections?.flatMap((section) => section.fields) || [];
@@ -434,27 +394,6 @@ const allowedExamDates = ["2025-05-28", "2025-05-29", "2025-05-30"];
           errors[field.name] = "You must be at least 20 years old to apply.";
         }
       }
-
-    //   // Add exam date validation here:
-    // if (/exam.*date/i.test(field.name)) {
-    //   if (!value || !allowedExamDates.includes(value)) {
-    //     errors[field.name] = "Only 28th, 29th, or 30th May 2025 are allowed for exams.";
-    //   } else {
-    //     try {
-    //       const response = await axios.get(`${API_BASE_URL}/api/exam-date-count`, {
-    //         params: { date: value }
-    //       });
-    //       const count = response.data.count || 0;
-
-    //       if (count >= MAX_EXAM_BOOKINGS_PER_DATE) {
-    //         errors[field.name] = "This exam date is already full. Please select another.";
-    //       }
-    //     } catch (err) {
-    //       console.error("Exam date availability check failed:", err);
-    //       errors[field.name] = "Unable to verify exam date availability. Please try again later.";
-    //     }
-    //   }
-    // }
 
       // Phone uniqueness check
       if (isPhoneField && value) {
@@ -538,6 +477,33 @@ const allowedExamDates = ["2025-05-28", "2025-05-29", "2025-05-30"];
         errors["slot"] = "This slot is already full. Please choose another.";
       }
     }
+
+    // Exam date limit check (max 2 per exam date per form)
+const examDateField = Object.keys(formResponses).find((key) =>
+  key.toLowerCase().includes("exam") && key.toLowerCase().includes("date")
+);
+
+if (examDateField) {
+ const selectedDate = formResponses[examDateField];
+
+try {
+  const { data } = await axios.get(`${API_BASE_URL}/api/exam-date-count`, {
+    params: {
+      formId: form._id,
+      date: selectedDate,
+      field: examDateField, // add this
+    },
+  });
+
+  if (data?.count >= 2) {
+    errors[examDateField] =
+      "This exam date is already full. Please choose another date.";
+  }
+} catch (err) {
+  console.error("Exam date availability check failed:", err);
+}
+
+}
 
     return errors;
   };
@@ -1163,11 +1129,11 @@ const allowedExamDates = ["2025-05-28", "2025-05-29", "2025-05-30"];
                                   }
                                   className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
                                 />
-                                {errors[field.name] && (
-                                  <p className="text-red-500 text-xs mt-1">
-                                    {errors[field.name]}
-                                  </p>
-                                )}
+                                 {dateErrors[field.name] && (
+      <p className="text-red-500 text-xs mt-1">
+        {dateErrors[field.name]}
+      </p>
+    )}
                               </div>
                             )}
 
