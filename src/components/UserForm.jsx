@@ -4,6 +4,8 @@ import { useParams } from "react-router-dom";
 import { API_BASE_URL } from "../api/api";
 import { useRef } from "react";
 import { toast } from "react-toastify";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const UserForm = ({ fields: initialFields }) => {
   const { formId, submissionId } = useParams();
@@ -245,27 +247,41 @@ const UserForm = ({ fields: initialFields }) => {
         .map((option) => option.value);
     } else {
       newValue = value;
-      // ✅ Weekend check for exam fields
-    if (type === "date" && /exam/i.test(name)) {
-  const selectedDate = new Date(value);
-  const day = selectedDate.getDay();
+      // Weekend check for exam fields
+      if (type === "date" && /exam/i.test(name)) {
+        const selectedDate = new Date(value);
+        const allowedDates = [
+          new Date("2025-06-05"),
+          new Date("2025-06-06"),
+          new Date("2025-06-09"),
+          new Date("2025-06-13"),
+          new Date("2025-06-16"),
+          new Date("2025-06-19"),
+          new Date("2025-06-23"),
+        ];
 
-  if (day === 0 || day === 6) {
-    setDateErrors((prev) => ({
-      ...prev,
-      [name]: "Weekends (Saturday and Sunday) are not allowed for exams.",
-    }));
-    return;
-  } else {
-    setDateErrors((prev) => ({
-      ...prev,
-      [name]: "", // clear previous error
-    }));
-  }
-}
+        const isAllowed = allowedDates.some(
+          (d) =>
+            d.getFullYear() === selectedDate.getFullYear() &&
+            d.getMonth() === selectedDate.getMonth() &&
+            d.getDate() === selectedDate.getDate()
+        );
 
-  }
-    
+        if (!isAllowed) {
+          setDateErrors((prev) => ({
+            ...prev,
+            [name]:
+              "Only selected dates in June are allowed: 5, 6, 9, 13, 16, 19, 23.",
+          }));
+          return;
+        } else {
+          setDateErrors((prev) => ({
+            ...prev,
+            [name]: "", // clear previous error
+          }));
+        }
+      }
+    }
 
     if (/slot/i.test(name)) {
       const normalizedValue = value?.trim().toLowerCase();
@@ -454,7 +470,7 @@ const UserForm = ({ fields: initialFields }) => {
         }
       }
     }
-  
+
     //  Slot capacity check
     const slotFieldName = Object.keys(formResponses).find((k) =>
       k.trim().toLowerCase().includes("slot")
@@ -479,31 +495,34 @@ const UserForm = ({ fields: initialFields }) => {
     }
 
     // Exam date limit check (max 2 per exam date per form)
-const examDateField = Object.keys(formResponses).find((key) =>
-  key.toLowerCase().includes("exam") && key.toLowerCase().includes("date")
-);
+    const examDateField = Object.keys(formResponses).find(
+      (key) =>
+        key.toLowerCase().includes("exam") && key.toLowerCase().includes("date")
+    );
 
-if (examDateField) {
- const selectedDate = formResponses[examDateField];
+    if (examDateField) {
+      const selectedDate = formResponses[examDateField];
 
-try {
-  const { data } = await axios.get(`${API_BASE_URL}/api/exam-date-count`, {
-    params: {
-      formId: form._id,
-      date: selectedDate,
-      field: examDateField, // add this
-    },
-  });
+      try {
+        const { data } = await axios.get(
+          `${API_BASE_URL}/api/exam-date-count`,
+          {
+            params: {
+              formId: form._id,
+              date: selectedDate,
+              field: examDateField, // add this
+            },
+          }
+        );
 
-  if (data?.count >= 2) {
-    errors[examDateField] =
-      "This exam date is already full. Please choose another date.";
-  }
-} catch (err) {
-  console.error("Exam date availability check failed:", err);
-}
-
-}
+        if (data?.count >= 4) {
+          errors[examDateField] =
+            "This exam date is already full. Please choose another date.";
+        }
+      } catch (err) {
+        console.error("Exam date availability check failed:", err);
+      }
+    }
 
     return errors;
   };
@@ -818,9 +837,10 @@ try {
         )}
         {formData.generalInstructions && (
           <>
-            <p className="mb-10 whitespace-pre-line text-gray-700 text-start text-sm font-semibold mb-10 border-b-2">
+            <p className="mb-7 whitespace-pre-line text-gray-700 text-start text-sm font-semibold">
               {formData.generalInstructions}
             </p>
+            <div className="border-b-2"></div>
           </>
         )}
         <div className="flex flex-wrap justify-start gap-2 mb-10 border-b-2">
@@ -1129,13 +1149,71 @@ try {
                                   }
                                   className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
                                 />
-                                 {dateErrors[field.name] && (
+                                {dateErrors[field.name] && (
+                                  <p className="text-red-500 text-xs mt-1">
+                                    {dateErrors[field.name]}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+
+                            {/* {field.type === "date" && (
+  <div>
+    <DatePicker
+      selected={
+        formResponses[field.name]
+          ? new Date(formResponses[field.name])
+          : null
+      }
+      onChange={(date) => {
+        handleInputChange({
+          target: {
+            name: field.name,
+            value: date ? date.toISOString().split("T")[0] : "",
+            type: "date",
+          },
+        });
+      }}
+      filterDate={(date) => {
+        if (/exam/i.test(field.name)) {
+          const allowedDates = [
+            "2025-06-05",
+            "2025-06-06",
+            "2025-06-09",
+            "2025-06-13",
+            "2025-06-16",
+            "2025-06-19",
+            "2025-06-23",
+          ];
+          const dateStr = date.toISOString().split("T")[0];
+          return allowedDates.includes(dateStr);
+        }
+        return true;
+      }}
+      placeholderText="Select date"
+      minDate={
+        /exam/i.test(field.name) ? new Date("2025-06-01") : undefined
+      }
+      maxDate={
+        /dob|birth/i.test(field.name)
+          ? getMaxDateForDob()
+          : /exam/i.test(field.name)
+          ? new Date("2025-06-30")
+          : undefined
+      }
+      disabled={shouldDisableField(field.name)}
+      required={field.required}
+      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+      dateFormat="yyyy-MM-dd"
+    />
+    {dateErrors[field.name] && (
       <p className="text-red-500 text-xs mt-1">
         {dateErrors[field.name]}
       </p>
     )}
-                              </div>
-                            )}
+  </div>
+)} */}
+
 
                             {/* {field.type === "date" && (
   <div>
@@ -1169,7 +1247,6 @@ try {
 
   </div>
 )} */}
-
 
                             {field.type === "time" && (
                               <input
