@@ -1110,7 +1110,7 @@ const UserForm = ({ fields: initialFields }) => {
                                       })
                                     }
                                     // className="absolute right-1 top-1/2 transform -translate-y-1/2 focus:outline-none border-l border-gray-300 bg-white rounded px-2 py-1 text-sm h-[30px]"
-                                    className="absolute right-2 top-[6px] focus:outline-none border-l border-gray-300 bg-white rounded px-2 py-[5px] text-sm h-[32px] w-[70px]"
+                                    className="absolute right-2 top-[3px] focus:outline-none border-l border-gray-300 bg-white rounded px-2 py-[5px] text-sm h-[32px] w-[70px]"
 
                                   >
                                     <option value="months">Months</option>
