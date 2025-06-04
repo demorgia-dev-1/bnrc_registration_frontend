@@ -928,86 +928,107 @@ const UserForm = ({ fields: initialFields }) => {
                                   *
                                 </span>
                               )}
-{field.type === "file" && (
-  <div className="flex items-center inline-block ml-1 relative">
-    {/* Isolated icon for tooltip */}
-    <div
-      className="relative"
-      onMouseEnter={(e) => {
-        const tooltip = e.currentTarget.querySelector(".file-tooltip");
-        tooltip?.classList.add("opacity-100");
-      }}
-      onMouseLeave={(e) => {
-        const tooltip = e.currentTarget.querySelector(".file-tooltip");
-        tooltip?.classList.remove("opacity-100");
-      }}
-      onFocus={(e) => {
-        const tooltip = e.currentTarget.querySelector(".file-tooltip");
-        tooltip?.classList.add("opacity-100");
-      }}
-      onBlur={(e) => {
-        const tooltip = e.currentTarget.querySelector(".file-tooltip");
-        tooltip?.classList.remove("opacity-100");
-      }}
-    >
-      <svg
-        className="w-4 h-4 text-gray-500 cursor-pointer"
-        fill="currentColor"
-        viewBox="0 0 20 20"
-        tabIndex={0}
-      >
-        <path
-          fillRule="evenodd"
-          d="M18 10A8 8 0 112 10a8 8 0 0116 0zm-9-1h2v5H9V9zm1-4a1 1 0 100 2 1 1 0 000-2z"
-          clipRule="evenodd"
-        />
-      </svg>
+                              {field.type === "file" && (
+                                <div className="flex items-center inline-block ml-1 relative">
+                                  {/* Isolated icon for tooltip */}
+                                  <div
+                                    className="relative"
+                                    onMouseEnter={(e) => {
+                                      const tooltip =
+                                        e.currentTarget.querySelector(
+                                          ".file-tooltip"
+                                        );
+                                      tooltip?.classList.add("opacity-100");
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      const tooltip =
+                                        e.currentTarget.querySelector(
+                                          ".file-tooltip"
+                                        );
+                                      tooltip?.classList.remove("opacity-100");
+                                    }}
+                                    onFocus={(e) => {
+                                      const tooltip =
+                                        e.currentTarget.querySelector(
+                                          ".file-tooltip"
+                                        );
+                                      tooltip?.classList.add("opacity-100");
+                                    }}
+                                    onBlur={(e) => {
+                                      const tooltip =
+                                        e.currentTarget.querySelector(
+                                          ".file-tooltip"
+                                        );
+                                      tooltip?.classList.remove("opacity-100");
+                                    }}
+                                  >
+                                    <svg
+                                      className="w-4 h-4 text-gray-500 cursor-pointer"
+                                      fill="currentColor"
+                                      viewBox="0 0 20 20"
+                                      tabIndex={0}
+                                    >
+                                      <path
+                                        fillRule="evenodd"
+                                        d="M18 10A8 8 0 112 10a8 8 0 0116 0zm-9-1h2v5H9V9zm1-4a1 1 0 100 2 1 1 0 000-2z"
+                                        clipRule="evenodd"
+                                      />
+                                    </svg>
 
-      <div
-        className="file-tooltip absolute z-10 w-64 p-2 text-xs text-white bg-black rounded opacity-0 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-1 pointer-events-none"
-      >
-        {/(certificate|cert)/i.test(field.name)
-          ? "PDF only, max 5MB for certificates."
-          : "JPG only, max 500KB for photos/signatures/Id."}
-      </div>
-    </div>
-  </div>
-)}
+                                    <div className="file-tooltip absolute z-10 w-64 p-2 text-xs text-white bg-black rounded opacity-0 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-1 pointer-events-none">
+                                      {/(certificate|cert)/i.test(field.name)
+                                        ? "PDF only, max 5MB for certificates."
+                                        : "JPG only, max 500KB for photos/signatures/Id."}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
 
+                              {field.type === "number" &&
+                                field.label
+                                  ?.toLowerCase()
+                                  .includes("years of experience") && (
+                                  <div className="relative ml-2 inline-flex items-center">
+                                    <div className="relative cursor-pointer">
+                                      <svg
+                                        className="w-4 h-4 text-gray-500"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                        tabIndex={0}
+                                        onFocus={(e) =>
+                                          e.target.nextSibling.classList.add(
+                                            "opacity-100"
+                                          )
+                                        }
+                                        onBlur={(e) =>
+                                          e.target.nextSibling.classList.remove(
+                                            "opacity-100"
+                                          )
+                                        }
+                                        onMouseEnter={(e) =>
+                                          e.target.nextSibling.classList.add(
+                                            "opacity-100"
+                                          )
+                                        }
+                                        onMouseLeave={(e) =>
+                                          e.target.nextSibling.classList.remove(
+                                            "opacity-100"
+                                          )
+                                        }
+                                      >
+                                        <path
+                                          fillRule="evenodd"
+                                          d="M18 10A8 8 0 112 10a8 8 0 0116 0zm-9-1h2v5H9V9zm1-4a1 1 0 100 2 1 1 0 000-2z"
+                                          clipRule="evenodd"
+                                        />
+                                      </svg>
 
-{field.type === "number" &&
-  field.label?.toLowerCase().includes("years of experience") && (
-    <div className="relative ml-2 inline-flex items-center">
-      <div className="relative cursor-pointer">
-        <svg
-          className="w-4 h-4 text-gray-500"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-          tabIndex={0}
-          onFocus={(e) => e.target.nextSibling.classList.add("opacity-100")}
-          onBlur={(e) => e.target.nextSibling.classList.remove("opacity-100")}
-          onMouseEnter={(e) => e.target.nextSibling.classList.add("opacity-100")}
-          onMouseLeave={(e) => e.target.nextSibling.classList.remove("opacity-100")}
-        >
-          <path
-            fillRule="evenodd"
-            d="M18 10A8 8 0 112 10a8 8 0 0116 0zm-9-1h2v5H9V9zm1-4a1 1 0 100 2 1 1 0 000-2z"
-            clipRule="evenodd"
-          />
-        </svg>
-
-        <div
-          className="absolute z-10 w-48 p-2 text-xs text-white bg-black rounded opacity-0 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-1 pointer-events-none whitespace-normal"
-        >
-          Write in the number of months.
-        </div>
-      </div>
-    </div>
-)}
-
-
-
-
+                                      <div className="absolute z-10 w-48 p-2 text-xs text-white bg-black rounded opacity-0 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-1 pointer-events-none whitespace-normal">
+                                        Write in the number of months.
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                             </label>
 
                             {field.type === "text" && (
@@ -1306,7 +1327,8 @@ const UserForm = ({ fields: initialFields }) => {
                                   ref={(ref) =>
                                     (fileInputRefs.current[field.name] = ref)
                                   }
-                                  accept=".jpg,.jpeg,.pdf"
+                                  accept={/(certificate|cert)/i.test(field.name) ? ".pdf" : ".jpg"}
+                                  // accept=".jpg,.jpeg,.pdf"
                                   multiple
                                   onChange={handleInputChange}
                                   //  onBlur={() => handleFieldValidation(field.name)}
