@@ -515,7 +515,7 @@ const UserForm = ({ fields: initialFields }) => {
           }
         );
 
-        if (data?.count >= 4) {
+        if (data?.count >= 25) {
           errors[examDateField] =
             "This exam date is already full. Please choose another date.";
         }
