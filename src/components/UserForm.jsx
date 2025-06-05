@@ -661,38 +661,38 @@ const UserForm = ({ fields: initialFields }) => {
         if (value instanceof File) {
           formData.append(fieldName, value);
         } else {
-          // responses[fieldName] = value;
-          const responses = {};
-const experienceFields = {};
+          responses[fieldName] = value;
+          // const responses = {};
+// const experienceFields = {};
 
-// First pass: build experienceFields and handle files / others
-Object.entries(formResponses).forEach(([fieldName, value]) => {
-  if (fieldName.includes("experience_value")) {
-    const base = fieldName.replace(/_?value$/, "");
-    experienceFields[base] = experienceFields[base] || {};
-    experienceFields[base].value = Number(value);
-  } else if (fieldName.includes("experience_unit")) {
-    const base = fieldName.replace(/_?unit$/, "");
-    experienceFields[base] = experienceFields[base] || {};
-    experienceFields[base].unit = value;
-  } else if (value instanceof File) {
-    formData.append(fieldName, value);
-  } else {
-    // For normal fields (string, etc.)
-    if (typeof value === "string") {
-      value = value.trim();
-      if (/bnrc/i.test(fieldName) || /phone/i.test(fieldName) || /aadhaar/i.test(fieldName)) {
-        value = value.toLowerCase();
-      }
-    }
-    responses[fieldName] = value;
-  }
-});
+// // First pass: build experienceFields and handle files / others
+// Object.entries(formResponses).forEach(([fieldName, value]) => {
+//   if (fieldName.includes("experience_value")) {
+//     const base = fieldName.replace(/_?value$/, "");
+//     experienceFields[base] = experienceFields[base] || {};
+//     experienceFields[base].value = Number(value);
+//   } else if (fieldName.includes("experience_unit")) {
+//     const base = fieldName.replace(/_?unit$/, "");
+//     experienceFields[base] = experienceFields[base] || {};
+//     experienceFields[base].unit = value;
+//   } else if (value instanceof File) {
+//     formData.append(fieldName, value);
+//   } else {
+//     // For normal fields (string, etc.)
+//     if (typeof value === "string") {
+//       value = value.trim();
+//       if (/bnrc/i.test(fieldName) || /phone/i.test(fieldName) || /aadhaar/i.test(fieldName)) {
+//         value = value.toLowerCase();
+//       }
+//     }
+//     responses[fieldName] = value;
+//   }
+// });
 
-// Second pass: merge experienceFields into responses
-Object.entries(experienceFields).forEach(([baseField, val]) => {
-  responses[baseField] = val;
-});
+// // Second pass: merge experienceFields into responses
+// Object.entries(experienceFields).forEach(([baseField, val]) => {
+//   responses[baseField] = val;
+// });
 
         }
       });
