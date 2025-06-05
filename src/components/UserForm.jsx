@@ -730,7 +730,7 @@ const UserForm = ({ fields: initialFields }) => {
                   "Redirecting to thankyou with submissionId:",
                   submissionId
                 );
-                // window.location.href = `/thankyou?submissionId=${submissionId}`;
+                window.location.href = `/thankyou?submissionId=${submissionId}`;
               } catch (err) {
                 console.error("Payment notification failed", err);
                 toast.error(
@@ -743,8 +743,8 @@ const UserForm = ({ fields: initialFields }) => {
           const razorpay = new window.Razorpay(options);
           razorpay.open();
         } else {
-          // sessionStorage.setItem("submissionId", submissionId);
-          // window.location.href = `/thankyou?submissionId=${submissionId}`;
+          sessionStorage.setItem("submissionId", submissionId);
+          window.location.href = `/thankyou?submissionId=${submissionId}`;
         }
 
         setIsSubmitting(false);
