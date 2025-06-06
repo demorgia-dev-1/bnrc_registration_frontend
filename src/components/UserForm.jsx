@@ -663,37 +663,36 @@ const UserForm = ({ fields: initialFields }) => {
         } else {
           responses[fieldName] = value;
           // const responses = {};
-// const experienceFields = {};
+          // const experienceFields = {};
 
-// // First pass: build experienceFields and handle files / others
-// Object.entries(formResponses).forEach(([fieldName, value]) => {
-//   if (fieldName.includes("experience_value")) {
-//     const base = fieldName.replace(/_?value$/, "");
-//     experienceFields[base] = experienceFields[base] || {};
-//     experienceFields[base].value = Number(value);
-//   } else if (fieldName.includes("experience_unit")) {
-//     const base = fieldName.replace(/_?unit$/, "");
-//     experienceFields[base] = experienceFields[base] || {};
-//     experienceFields[base].unit = value;
-//   } else if (value instanceof File) {
-//     formData.append(fieldName, value);
-//   } else {
-//     // For normal fields (string, etc.)
-//     if (typeof value === "string") {
-//       value = value.trim();
-//       if (/bnrc/i.test(fieldName) || /phone/i.test(fieldName) || /aadhaar/i.test(fieldName)) {
-//         value = value.toLowerCase();
-//       }
-//     }
-//     responses[fieldName] = value;
-//   }
-// });
+          // // First pass: build experienceFields and handle files / others
+          // Object.entries(formResponses).forEach(([fieldName, value]) => {
+          //   if (fieldName.includes("experience_value")) {
+          //     const base = fieldName.replace(/_?value$/, "");
+          //     experienceFields[base] = experienceFields[base] || {};
+          //     experienceFields[base].value = Number(value);
+          //   } else if (fieldName.includes("experience_unit")) {
+          //     const base = fieldName.replace(/_?unit$/, "");
+          //     experienceFields[base] = experienceFields[base] || {};
+          //     experienceFields[base].unit = value;
+          //   } else if (value instanceof File) {
+          //     formData.append(fieldName, value);
+          //   } else {
+          //     // For normal fields (string, etc.)
+          //     if (typeof value === "string") {
+          //       value = value.trim();
+          //       if (/bnrc/i.test(fieldName) || /phone/i.test(fieldName) || /aadhaar/i.test(fieldName)) {
+          //         value = value.toLowerCase();
+          //       }
+          //     }
+          //     responses[fieldName] = value;
+          //   }
+          // });
 
-// // Second pass: merge experienceFields into responses
-// Object.entries(experienceFields).forEach(([baseField, val]) => {
-//   responses[baseField] = val;
-// });
-
+          // // Second pass: merge experienceFields into responses
+          // Object.entries(experienceFields).forEach(([baseField, val]) => {
+          //   responses[baseField] = val;
+          // });
         }
       });
 
@@ -1218,7 +1217,7 @@ const UserForm = ({ fields: initialFields }) => {
                                 )}
                               </div>
                             )}
-
+                            {/* 
                             {field.type === "date" && (
                               <div>
                                 <input
@@ -1248,64 +1247,124 @@ const UserForm = ({ fields: initialFields }) => {
                                   </p>
                                 )}
                               </div>
-                            )}
+                            )} */}
 
-                            {/* {field.type === "date" && (
-  <div>
-    <DatePicker
-      selected={
-        formResponses[field.name]
-          ? new Date(formResponses[field.name])
-          : null
-      }
-      onChange={(date) => {
-        handleInputChange({
-          target: {
-            name: field.name,
-            value: date ? date.toISOString().split("T")[0] : "",
-            type: "date",
-          },
-        });
-      }}
-      filterDate={(date) => {
-        if (/exam/i.test(field.name)) {
-          const allowedDates = [
-            "2025-06-05",
-            "2025-06-06",
-            "2025-06-09",
-            "2025-06-13",
-            "2025-06-16",
-            "2025-06-19",
-            "2025-06-23",
-          ];
-          const dateStr = date.toISOString().split("T")[0];
-          return allowedDates.includes(dateStr);
-        }
-        return true;
-      }}
-      placeholderText="Select date"
-      minDate={
-        /exam/i.test(field.name) ? new Date("2025-06-01") : undefined
-      }
-      maxDate={
-        /dob|birth/i.test(field.name)
-          ? getMaxDateForDob()
-          : /exam/i.test(field.name)
-          ? new Date("2025-06-30")
-          : undefined
-      }
-      disabled={shouldDisableField(field.name)}
-      required={field.required}
-      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-      dateFormat="yyyy-MM-dd"
-    />
-    {dateErrors[field.name] && (
-      <p className="text-red-500 text-xs mt-1">
-        {dateErrors[field.name]}
-      </p>
-    )}
-  </div>
-)} */}
+                            {field.type === "date" && (
+                              <div>
+                                {/exam/i.test(field.name) ? (
+                                  <DatePicker
+                                    selected={
+                                      formResponses[field.name]
+                                        ? new Date(formResponses[field.name])
+                                        : null
+                                    }
+                                    onChange={(date) => {
+                                      const today = new Date();
+                                      today.setHours(0, 0, 0, 0);
+                                      if (date < today) {
+                                        setDateErrors((prev) => ({
+                                          ...prev,
+                                          [field.name]:
+                                            "You cannot select a past date.",
+                                        }));
+                                        return;
+                                      }
+
+                                      setDateErrors((prev) => ({
+                                        ...prev,
+                                        [field.name]: "",
+                                      }));
+
+                                      handleInputChange({
+                                        target: {
+                                          name: field.name,
+                                          value: date
+                                            ? date.toISOString().split("T")[0]
+                                            : "",
+                                          type: "date",
+                                        },
+                                      });
+                                    }}
+                                    includeDates={[
+                                      new Date("2025-06-05"),
+                                      new Date("2025-06-06"),
+                                      new Date("2025-06-09"),
+                                      new Date("2025-06-13"),
+                                      new Date("2025-06-16"),
+                                      new Date("2025-06-19"),
+                                      new Date("2025-06-23"),
+                                    ]}
+                                    minDate={new Date()}
+                                    showMonthDropdown
+                                    showYearDropdown
+                                    dropdownMode="select"
+                                    placeholderText="Select exam date"
+                                    dateFormat="yyyy-MM-dd"
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                                    required={field.required}
+                                    disabled={shouldDisableField(field.name)}
+                                  />
+                                ) : (
+                                  <DatePicker
+                                    selected={
+                                      formResponses[field.name]
+                                        ? new Date(formResponses[field.name])
+                                        : null
+                                    }
+                                    onChange={(date) => {
+                                      const today = new Date();
+                                      const cutoff = new Date();
+                                      cutoff.setFullYear(
+                                        today.getFullYear() - 20
+                                      );
+
+                                      if (date > cutoff) {
+                                        setDateErrors((prev) => ({
+                                          ...prev,
+                                          [field.name]:
+                                            "You must be at least 20 years old to apply.",
+                                        }));
+                                        return;
+                                      }
+
+                                      setDateErrors((prev) => ({
+                                        ...prev,
+                                        [field.name]: "",
+                                      }));
+
+                                      handleInputChange({
+                                        target: {
+                                          name: field.name,
+                                          value: date
+                                            ? date.toISOString().split("T")[0]
+                                            : "",
+                                          type: "date",
+                                        },
+                                      });
+                                    }}
+                                    maxDate={(() => {
+                                      const date = new Date();
+                                      date.setFullYear(date.getFullYear() - 20);
+                                      return date;
+                                    })()}
+                                    placeholderText="Select date of birth"
+                                    dateFormat="yyyy-MM-dd"
+                                    showMonthDropdown
+                                    showYearDropdown
+                                    dropdownMode="select"
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                                    required={field.required}
+                                    disabled={shouldDisableField(field.name)}
+                                  />
+                                )}
+
+                                {dateErrors[field.name] && (
+                                  <p className="text-red-500 text-xs mt-1">
+                                    {dateErrors[field.name]}
+                                  </p>
+                                )}
+                              </div>
+                            )}
 
                             {/* {field.type === "date" && (
   <div>
@@ -1360,7 +1419,11 @@ const UserForm = ({ fields: initialFields }) => {
                                   ref={(ref) =>
                                     (fileInputRefs.current[field.name] = ref)
                                   }
-                                  accept={/(certificate|cert)/i.test(field.name) ? ".pdf" : ".jpg"}
+                                  accept={
+                                    /(certificate|cert)/i.test(field.name)
+                                      ? ".pdf"
+                                      : ".jpg"
+                                  }
                                   // accept=".jpg,.jpeg,.pdf"
                                   multiple
                                   onChange={handleInputChange}
