@@ -934,9 +934,9 @@ const handleSubmit = async (e) => {
 
             const submissionId = submitResponse.data.submission._id;
             sessionStorage.setItem("submissionId", submissionId);
-            // window.location.href = `/thankyou`;
+            window.location.href = `/thankyou`;
           } catch (err) {
-            console.error("Payment notification failed", err);
+           console.error("Payment notification failed:", err?.response?.data || err.message, err);
             toast.error("Payment notification failed. Please contact support.");
           } finally {
             setIsSubmitting(false);
@@ -974,7 +974,7 @@ formData.append("responses", JSON.stringify(responses));
 
         const submissionId = submitResponse.data.submission._id;
         sessionStorage.setItem("submissionId", submissionId);
-        // window.location.href = `/thankyou`;
+        window.location.href = `/thankyou`;
       }
       setIsSubmitting(false);
     }
