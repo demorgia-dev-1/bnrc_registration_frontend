@@ -4,7 +4,7 @@ import { API_BASE_URL } from "../api/api";
 
 
 import { useNavigate } from "react-router-dom";
-import CreateResult from "./CreateExamResults";
+// import CreateResult from "./CreateExamResults";
 
 const Modal = ({ show, onClose, data, children }) => {
   const [previewImage, setPreviewImage] = useState(null);
@@ -141,7 +141,7 @@ function TestUserPanel() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [filteredSubmissions, setFilteredSubmissions] = useState([]);
-  const [iscreateResult, setIsCreateResult] = useState(false)
+  // const [iscreateResult, setIsCreateResult] = useState(false)
   
 
   const navigate = useNavigate();
@@ -323,7 +323,7 @@ function TestUserPanel() {
               >
                 Download Submissions Excel
               </button>
-                        <button
+                        {/* <button
                       onClick={() => setIsCreateResult(true)}
                       className="rounded-lg px-6 py-3 font-semibold shadow-lg transition duration-300 cursor-pointer bg-blue-600 text-white rounded hover:bg-blue-700"
                     >
@@ -342,14 +342,14 @@ function TestUserPanel() {
                           <CreateResult />
                         </div>
                       </div>
-                    )}
-              
+                    )} */}
+{/*               
                         <button
                 onClick={() => window.open('/results', '_blank')}
                 className="rounded-lg px-6 py-3 font-semibold shadow-lg transition duration-300 cursor-pointer bg-green-600 text-white hover:bg-green-700"
               >
                 Show Results
-              </button>
+              </button> */}
               <button
                 onClick={handleLogout}
                 className="rounded-lg px-6 py-3 font-semibold text-white bg-red-600 shadow-lg hover:bg-red-700 transition duration-300 cursor-pointer"
