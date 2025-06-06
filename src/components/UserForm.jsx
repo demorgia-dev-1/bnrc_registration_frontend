@@ -251,13 +251,35 @@ const UserForm = ({ fields: initialFields }) => {
       if (type === "date" && /exam/i.test(name)) {
         const selectedDate = new Date(value);
         const allowedDates = [
-          new Date("2025-06-05"),
-          new Date("2025-06-06"),
-          new Date("2025-06-09"),
           new Date("2025-06-13"),
+          new Date("2025-06-14"),
           new Date("2025-06-16"),
-          new Date("2025-06-19"),
+          new Date("2025-06-17"),
+          new Date("2025-06-20"),
+          new Date("2025-06-21"),
           new Date("2025-06-23"),
+          new Date("2025-06-24"),
+          new Date("2025-06-27"),
+          new Date("2025-06-28"),
+          new Date("2025-06-30"),
+          new Date("2025-07-01"),
+          new Date("2025-07-04"),
+          new Date("2025-07-05"),
+          new Date("2025-07-07"),
+          new Date("2025-07-08"),
+          new Date("2025-07-11"),
+          new Date("2025-07-12"),
+          new Date("2025-07-14"),
+          new Date("2025-07-15"),
+          new Date("2025-07-18"),
+          new Date("2025-07-19"),
+          new Date("2025-07-21"),
+          new Date("2025-07-22"),
+          new Date("2025-07-25"),
+          new Date("2025-07-26"),
+          new Date("2025-07-28"),
+          new Date("2025-07-29"),
+          new Date("2025-07-12"),
         ];
 
         const isAllowed = allowedDates.some(
@@ -1250,7 +1272,6 @@ const UserForm = ({ fields: initialFields }) => {
                                         [field.name]: "",
                                       }));
 
-                                      // Format date as yyyy-MM-dd in local time
                                       const formatDate = (d) => {
                                         if (!d) return "";
                                         const year = d.getFullYear();
@@ -1272,15 +1293,37 @@ const UserForm = ({ fields: initialFields }) => {
                                       });
                                     }}
                                     includeDates={[
-                                      new Date("2025-06-05"),
-                                      new Date("2025-06-06"),
-                                      new Date("2025-06-09"),
                                       new Date("2025-06-13"),
+                                      new Date("2025-06-14"),
                                       new Date("2025-06-16"),
-                                      new Date("2025-06-19"),
+                                      new Date("2025-06-17"),
+                                      new Date("2025-06-20"),
+                                      new Date("2025-06-21"),
                                       new Date("2025-06-23"),
+                                      new Date("2025-06-24"),
+                                      new Date("2025-06-27"),
+                                      new Date("2025-06-28"),
+                                      new Date("2025-06-30"),
+                                      new Date("2025-07-01"),
+                                      new Date("2025-07-04"),
+                                      new Date("2025-07-05"),
+                                      new Date("2025-07-07"),
+                                      new Date("2025-07-08"),
+                                      new Date("2025-07-11"),
+                                      new Date("2025-07-12"),
+                                      new Date("2025-07-14"),
+                                      new Date("2025-07-15"),
+                                      new Date("2025-07-18"),
+                                      new Date("2025-07-19"),
+                                      new Date("2025-07-21"),
+                                      new Date("2025-07-22"),
+                                      new Date("2025-07-25"),
+                                      new Date("2025-07-26"),
+                                      new Date("2025-07-28"),
+                                      new Date("2025-07-29"),
+                                      new Date("2025-07-12"),
                                     ]}
-                                    minDate={new Date()} // still needed to prevent selecting past
+                                    minDate={new Date()}
                                     showMonthDropdown
                                     showYearDropdown
                                     dropdownMode="select"
@@ -1291,24 +1334,68 @@ const UserForm = ({ fields: initialFields }) => {
                                     disabled={shouldDisableField(field.name)}
                                   />
                                 ) : (
-                                  <input
-                                    type="date"
-                                    name={field.name}
-                                    value={formResponses[field.name] || ""}
-                                    onChange={handleInputChange}
+                                  <DatePicker
+                                    selected={
+                                      formResponses[field.name]
+                                        ? new Date(formResponses[field.name])
+                                        : null
+                                    }
+                                    onChange={(date) => {
+                                      const today = new Date();
+                                      const cutoff = new Date();
+                                      cutoff.setFullYear(
+                                        today.getFullYear() - 20
+                                      );
+                                      cutoff.setDate(cutoff.getDate());
+
+                                      if (date > cutoff) {
+                                        setDateErrors((prev) => ({
+                                          ...prev,
+                                          [field.name]:
+                                            "You must be nearly 20 years old to apply.",
+                                        }));
+                                        return;
+                                      }
+
+                                      setDateErrors((prev) => ({
+                                        ...prev,
+                                        [field.name]: "",
+                                      }));
+
+                                      const formatDate = (d) => {
+                                        if (!d) return "";
+                                        const year = d.getFullYear();
+                                        const month = String(
+                                          d.getMonth() + 1
+                                        ).padStart(2, "0");
+                                        const day = String(
+                                          d.getDate()
+                                        ).padStart(2, "0");
+                                        return `${year}-${month}-${day}`;
+                                      };
+
+                                      handleInputChange({
+                                        target: {
+                                          name: field.name,
+                                          value: date ? formatDate(date) : "",
+                                          type: "date",
+                                        },
+                                      });
+                                    }}
+                                    maxDate={(() => {
+                                      const date = new Date();
+                                      date.setFullYear(date.getFullYear() - 20);
+                                      date.setDate(date.getDate());
+                                      return date;
+                                    })()}
+                                    placeholderText="Select date of birth"
+                                    dateFormat="yyyy-MM-dd"
+                                    showMonthDropdown
+                                    showYearDropdown
+                                    dropdownMode="select"
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
                                     required={field.required}
                                     disabled={shouldDisableField(field.name)}
-                                    min={
-                                      /dob|birth/i.test(field.name)
-                                        ? getToday()
-                                        : undefined
-                                    }
-                                    max={
-                                      /dob|birth/i.test(field.name)
-                                        ? getMaxDateForDob()
-                                        : undefined
-                                    }
-                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
                                   />
                                 )}
 
