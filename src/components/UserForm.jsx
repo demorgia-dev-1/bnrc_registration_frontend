@@ -266,20 +266,6 @@ const UserForm = ({ fields: initialFields }) => {
             d.getMonth() === selectedDate.getMonth() &&
             d.getDate() === selectedDate.getDate()
         );
-
-        if (!isAllowed) {
-          setDateErrors((prev) => ({
-            ...prev,
-            [name]:
-              "Only selected dates in June are allowed: 5, 6, 9, 13, 16, 19, 23.",
-          }));
-          return;
-        } else {
-          setDateErrors((prev) => ({
-            ...prev,
-            [name]: "", // clear previous error
-          }));
-        }
       }
     }
 
@@ -1259,28 +1245,28 @@ const UserForm = ({ fields: initialFields }) => {
                                         : null
                                     }
                                     onChange={(date) => {
-                                      const today = new Date();
-                                      today.setHours(0, 0, 0, 0);
-                                      if (date < today) {
-                                        setDateErrors((prev) => ({
-                                          ...prev,
-                                          [field.name]:
-                                            "You cannot select a past date.",
-                                        }));
-                                        return;
-                                      }
-
                                       setDateErrors((prev) => ({
                                         ...prev,
                                         [field.name]: "",
                                       }));
 
+                                      // Format date as yyyy-MM-dd in local time
+                                      const formatDate = (d) => {
+                                        if (!d) return "";
+                                        const year = d.getFullYear();
+                                        const month = String(
+                                          d.getMonth() + 1
+                                        ).padStart(2, "0");
+                                        const day = String(
+                                          d.getDate()
+                                        ).padStart(2, "0");
+                                        return `${year}-${month}-${day}`;
+                                      };
+
                                       handleInputChange({
                                         target: {
                                           name: field.name,
-                                          value: date
-                                            ? date.toISOString().split("T")[0]
-                                            : "",
+                                          value: date ? formatDate(date) : "",
                                           type: "date",
                                         },
                                       });
@@ -1294,7 +1280,7 @@ const UserForm = ({ fields: initialFields }) => {
                                       new Date("2025-06-19"),
                                       new Date("2025-06-23"),
                                     ]}
-                                    minDate={new Date()}
+                                    minDate={new Date()} // still needed to prevent selecting past
                                     showMonthDropdown
                                     showYearDropdown
                                     dropdownMode="select"
@@ -1305,56 +1291,24 @@ const UserForm = ({ fields: initialFields }) => {
                                     disabled={shouldDisableField(field.name)}
                                   />
                                 ) : (
-                                  <DatePicker
-                                    selected={
-                                      formResponses[field.name]
-                                        ? new Date(formResponses[field.name])
-                                        : null
-                                    }
-                                    onChange={(date) => {
-                                      const today = new Date();
-                                      const cutoff = new Date();
-                                      cutoff.setFullYear(
-                                        today.getFullYear() - 20
-                                      );
-
-                                      if (date > cutoff) {
-                                        setDateErrors((prev) => ({
-                                          ...prev,
-                                          [field.name]:
-                                            "You must be at least 20 years old to apply.",
-                                        }));
-                                        return;
-                                      }
-
-                                      setDateErrors((prev) => ({
-                                        ...prev,
-                                        [field.name]: "",
-                                      }));
-
-                                      handleInputChange({
-                                        target: {
-                                          name: field.name,
-                                          value: date
-                                            ? date.toISOString().split("T")[0]
-                                            : "",
-                                          type: "date",
-                                        },
-                                      });
-                                    }}
-                                    maxDate={(() => {
-                                      const date = new Date();
-                                      date.setFullYear(date.getFullYear() - 20);
-                                      return date;
-                                    })()}
-                                    placeholderText="Select date of birth"
-                                    dateFormat="yyyy-MM-dd"
-                                    showMonthDropdown
-                                    showYearDropdown
-                                    dropdownMode="select"
-                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                                  <input
+                                    type="date"
+                                    name={field.name}
+                                    value={formResponses[field.name] || ""}
+                                    onChange={handleInputChange}
                                     required={field.required}
                                     disabled={shouldDisableField(field.name)}
+                                    min={
+                                      /dob|birth/i.test(field.name)
+                                        ? getToday()
+                                        : undefined
+                                    }
+                                    max={
+                                      /dob|birth/i.test(field.name)
+                                        ? getMaxDateForDob()
+                                        : undefined
+                                    }
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
                                   />
                                 )}
 
