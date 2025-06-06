@@ -855,41 +855,38 @@ const handleSubmit = async (e) => {
         }
       }
 
-        if (value instanceof File) {
-          formData.append(fieldName, value);
-        } else {
-          responses[fieldName] = value;
-          // const responses = {};
-          // const experienceFields = {};
+      if (value instanceof File) {
+        formData.append(fieldName, value);
+      } else {
+        responses[fieldName] = value;
+      }
+    });
 
-          // // First pass: build experienceFields and handle files / others
-          // Object.entries(formResponses).forEach(([fieldName, value]) => {
-          //   if (fieldName.includes("experience_value")) {
-          //     const base = fieldName.replace(/_?value$/, "");
-          //     experienceFields[base] = experienceFields[base] || {};
-          //     experienceFields[base].value = Number(value);
-          //   } else if (fieldName.includes("experience_unit")) {
-          //     const base = fieldName.replace(/_?unit$/, "");
-          //     experienceFields[base] = experienceFields[base] || {};
-          //     experienceFields[base].unit = value;
-          //   } else if (value instanceof File) {
-          //     formData.append(fieldName, value);
-          //   } else {
-          //     // For normal fields (string, etc.)
-          //     if (typeof value === "string") {
-          //       value = value.trim();
-          //       if (/bnrc/i.test(fieldName) || /phone/i.test(fieldName) || /aadhaar/i.test(fieldName)) {
-          //         value = value.toLowerCase();
-          //       }
-          //     }
-          //     responses[fieldName] = value;
-          //   }
-          // });
+    // ✅ FIXED: append responses after it’s populated
+    formData.append("responses", JSON.stringify(responses));
 
-          // // Second pass: merge experienceFields into responses
-          // Object.entries(experienceFields).forEach(([baseField, val]) => {
-          //   responses[baseField] = val;
-          // });
+    const slotFieldName = Object.keys(responses).find((k) =>
+      k.trim().toLowerCase().includes("slot")
+    );
+    const selectedSlot = responses[slotFieldName];
+
+    const normalizedSlot = normalizeSlot(selectedSlot);
+    const slotCount = normalizedCounts[normalizedSlot] || 0;
+
+    console.log("Checking slot:", selectedSlot, latestCounts);
+    console.log("slot count:", slotCount);
+
+    if (form.paymentRequired && (form.paymentRequired === true || form.paymentRequired === "true")) {
+      // ✅ Only then call backend to create Razorpay order
+      console.log("Submitting payment for form:", form._id, "paymentRequired:", form.paymentRequired);
+
+      const orderResponse = await axios.post(
+        `${API_BASE_URL}/api/payment/create-order`,
+        { formId: form._id },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
@@ -937,10 +934,9 @@ const handleSubmit = async (e) => {
 
             const submissionId = submitResponse.data.submission._id;
             sessionStorage.setItem("submissionId", submissionId);
-            window.location.href = `/thankyou`;
+            // window.location.href = `/thankyou`;
           } catch (err) {
-            console.error("Payment notification failed:", err?.response?.data || err.message, err);
-
+            console.error("Payment notification failed", err);
             toast.error("Payment notification failed. Please contact support.");
           } finally {
             setIsSubmitting(false);
@@ -978,7 +974,7 @@ formData.append("responses", JSON.stringify(responses));
 
         const submissionId = submitResponse.data.submission._id;
         sessionStorage.setItem("submissionId", submissionId);
-        window.location.href = `/thankyou`;
+        // window.location.href = `/thankyou`;
       }
       setIsSubmitting(false);
     }
