@@ -93,11 +93,10 @@ const ThankYou = () => {
         </p>
       )}
       <p className="text-gray-600 mb-1">
-        You will receive your admit card within 3 working days
+        Your admit card has been mailed. Thank you for registering.
       </p>
       <p className="text-gray-600 mb-1">
-        We appreciate your patience and support. If you have any questions, feel
-        free to contact us.
+        We wish you all the best.
       </p>
       
       <p className="text-gray-600 mb-6">You can now close this window.</p>
