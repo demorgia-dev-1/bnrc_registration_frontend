@@ -2028,6 +2028,19 @@ formData.append("responses", JSON.stringify(responses));
             {isSubmitting ? "Submitting..." : submitButtonText}
           </button>
         </div>
+{isSubmitting && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300 ease-in-out">
+    <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-sm w-full text-center animate-fadeInUp">
+      <h2 className="text-xl font-bold text-gray-800 mb-3">Please wait...</h2>
+      <p className="text-gray-600 mb-4">Do not close the window. Form submission in progress..</p>
+      <div className="flex justify-center">
+        <div className="h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    </div>
+  </div>
+)}
+
+
       </form>
     </div>
   );
