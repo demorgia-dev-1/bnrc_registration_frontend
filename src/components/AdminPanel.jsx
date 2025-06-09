@@ -146,6 +146,7 @@ export const AdminPanel = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [showListModal, setShowListModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [submissions, setSubmissions] = useState([]);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [showFormIdModal, setShowFormIdModal] = useState(false);
   const [formIdInput, setFormIdInput] = useState("");
@@ -156,13 +157,73 @@ export const AdminPanel = () => {
   const [sections, setSections] = useState([{ name: "", fields: [] }]);
   const [instructionsTitle, setInstructionsTitle] = useState("");
   const [generalInstructions, setGeneralInstructions] = useState("");
-  const [iscreateResult, setIsCreateResult] = useState(false)
+  const [iscreateResult, setIsCreateResult] = useState(false);
+  const [examDates, setExamDates] = useState([]);
+  const [selectedExamDate, setSelectedExamDate] = useState("");
+  const [examFilteredSubmissions, setExamFilteredSubmissions] = useState([]);
 
   const navigate = useNavigate();
 
-  const filteredSubmissions = uploadedFiles.filter(
-    (submission) => submission.form?._id === selectedFormId
+  const staticExamDates = [
+    "2025-06-13",
+    "2025-06-14",
+    "2025-06-16",
+    "2025-06-17",
+    "2025-06-20",
+    "2025-06-21",
+    "2025-06-23",
+    "2025-06-24",
+    "2025-06-27",
+    "2025-06-28",
+    "2025-06-30",
+    "2025-07-01",
+    "2025-07-04",
+    "2025-07-05",
+    "2025-07-07",
+    "2025-07-08",
+    "2025-07-11",
+    "2025-07-12",
+    "2025-07-14",
+    "2025-07-15",
+    "2025-07-18",
+    "2025-07-19",
+    "2025-07-21",
+    "2025-07-22",
+    "2025-07-25",
+    "2025-07-26",
+    "2025-07-28",
+    "2025-07-29",
+  ];
+
+  // const filteredSubmissions = uploadedFiles.filter(
+  //   (submission) => submission.form?._id === selectedFormId
+  // );
+
+  const filteredSubmissions = submissions.filter(
+    (submission) =>
+      submission.form?._id === selectedFormId &&
+      (!selectedExamDate ||
+        submission.responses?.exam_date_selection === selectedExamDate)
   );
+
+  useEffect(() => {
+    if (!selectedFormId) return;
+
+    async function fetchExamDates() {
+      try {
+        const res = await axios.get(
+          `${API_BASE_URL}/api/forms/${selectedFormId}/exam-dates`
+        );
+        setExamDates(
+          res.data.examDates.sort((a, b) => new Date(a) - new Date(b))
+        );
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    fetchExamDates();
+  }, [selectedFormId]);
 
   useEffect(() => {
     const fetchForms = async () => {
@@ -184,17 +245,35 @@ export const AdminPanel = () => {
     fetchForms();
   }, []);
 
+  // useEffect(() => {
+  //   const fetchSubmissions = async () => {
+  //     try {
+  //       const token = sessionStorage.getItem("token");
+  //       console.log("token", token);
+  //       const res = await axios.get(`${API_BASE_URL}/api/submissions`, {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       });
+  //       setUploadedFiles(res.data.submissions);
+  //     } catch (err) {
+  //       console.error("Error fetching submissions:", err);
+  //     }
+  //   };
+
+  //   fetchSubmissions();
+  // }, []);
+
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
         const token = sessionStorage.getItem("token");
-        console.log("token", token);
         const res = await axios.get(`${API_BASE_URL}/api/submissions`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        setUploadedFiles(res.data.submissions);
+        setSubmissions(res.data.submissions); // ✅ Correct source
       } catch (err) {
         console.error("Error fetching submissions:", err);
       }
@@ -220,6 +299,23 @@ export const AdminPanel = () => {
     if (generalInstructions) {
     }
   }, [generalInstructions]);
+
+  useEffect(() => {
+    const enhanced = submissions.map((s) => ({
+      ...s,
+      verified: s.verified || false,
+    }));
+
+    const filtered = selectedExamDate
+      ? enhanced.filter(
+          (s) =>
+            s.responses?.exam_date_selection &&
+            s.responses.exam_date_selection === selectedExamDate
+        )
+      : enhanced;
+
+    setExamFilteredSubmissions(filtered);
+  }, [submissions, selectedFormId, selectedExamDate]);
 
   const handleLogout = () => {
     sessionStorage.clear(); // or sessionStorage.removeItem('token') and others if you prefer
@@ -269,33 +365,67 @@ export const AdminPanel = () => {
     }
   };
 
-  const downloadSubmissionExcel = async (formId) => {
+  // const downloadSubmissionExcel = async (formId) => {
+  //   try {
+  //     const token = sessionStorage.getItem("token");
+  //     console.log("token", token);
+  //     const response = await fetch(
+  //       `${API_BASE_URL}/api/download/submissions-excel?formId=${formId}`,
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+
+  //     if (!response.ok) {
+  //       throw new Error("Failed to download Excel");
+  //     }
+
+  //     const blob = await response.blob();
+  //     const url = window.URL.createObjectURL(blob);
+  //     const a = document.createElement("a");
+  //     a.href = url;
+  //     a.download = `submissions-${formId}.xlsx`;
+  //     document.body.appendChild(a);
+  //     a.click();
+  //     a.remove();
+  //     window.URL.revokeObjectURL(url);
+  //   } catch (error) {
+  //     console.error("Download error:", error);
+  //     alert("Failed to download submissions.");
+  //   }
+  // };
+
+  const downloadSubmissionExcel = async (formId, examDate) => {
     try {
       const token = sessionStorage.getItem("token");
-      console.log("token", token);
-      const response = await fetch(
-        `${API_BASE_URL}/api/download/submissions-excel?formId=${formId}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
 
-      if (!response.ok) {
-        throw new Error("Failed to download Excel");
+      const url = new URL(`${API_BASE_URL}/api/download/submissions-excel`);
+      url.searchParams.append("formId", formId);
+      if (examDate) {
+        url.searchParams.append("examDate", examDate);
       }
 
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error("Failed to download Excel");
+
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const blobUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
-      a.download = `submissions-${formId}.xlsx`;
+      a.href = blobUrl;
+      a.download = `submissions-${formId}${
+        examDate ? `-${examDate}` : ""
+      }.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error("Download error:", error);
       alert("Failed to download submissions.");
@@ -490,19 +620,19 @@ export const AdminPanel = () => {
   };
 
   const handleRemoveField = (sectionIndex, fieldIndex) => {
-  setSections((prevSections) => {
-    const updated = [...prevSections];
-    const sectionFields = [...updated[sectionIndex].fields];
+    setSections((prevSections) => {
+      const updated = [...prevSections];
+      const sectionFields = [...updated[sectionIndex].fields];
 
-    sectionFields.splice(fieldIndex, 1); // remove the correct field
-    updated[sectionIndex] = {
-      ...updated[sectionIndex],
-      fields: sectionFields,
-    };
+      sectionFields.splice(fieldIndex, 1); // remove the correct field
+      updated[sectionIndex] = {
+        ...updated[sectionIndex],
+        fields: sectionFields,
+      };
 
-    return updated;
-  });
-};
+      return updated;
+    });
+  };
 
   const fetchForm = async (formId) => {
     try {
@@ -562,22 +692,42 @@ export const AdminPanel = () => {
       />
       <div className="absolute top-0 right-0 h-full w-1/2 flex flex-col items-center justify-center z-10">
         <div className="mt-5 p-5 rounded-lg w-full max-w-lg flex flex-wrap justify-between gap-2">
-          <div className=" py-1 px-4 bg-blue-700 text-white rounded-lg shadow-xl hover:bg-blue-800 cursor-pointer">
+          <div className="flex flex-wrap items-center gap-4">
             <select
               id="formSelect"
               value={selectedFormId}
               onChange={(e) => setSelectedFormId(e.target.value)}
-              className="py-2 px-1 cursor-pointer focus:outline-none"
+              className="py-2 px-3 rounded-md bg-blue-700 text-white cursor-pointer focus:outline-none hover:bg-blue-800"
             >
-              <option value="" className="text-black">
+              <option value="" className="text-gray-700">
                 Select a form
               </option>
               {forms.map((form) => (
-                <option key={form._id} value={form._id} className="text-black">
+                <option
+                  key={form._id}
+                  value={form._id}
+                  className="text-gray-700"
+                >
                   {form.formName}
                 </option>
               ))}
             </select>
+
+            {selectedFormId && submissions.length > 0 && (
+              <select
+                id="dateFilter"
+                value={selectedExamDate}
+                onChange={(e) => setSelectedExamDate(e.target.value)}
+                className="py-2 px-3 rounded-md bg-blue-700 text-white cursor-pointer focus:outline-none hover:bg-blue-800"
+              >
+                <option value="">Select Exam Date</option>
+                {staticExamDates.map((date) => (
+                  <option key={date} value={date}>
+                    {date}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           {/* Show All Submissions Modal */}
           <button
@@ -705,39 +855,39 @@ export const AdminPanel = () => {
             Download Submissions
           </button>
           <button
-        onClick={() => setIsCreateResult(true)}
-        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        Create Result
-      </button>
-{iscreateResult && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
-          <div className="bg-white rounded-lg shadow-xl w-auto max-h-[90vh] overflow-y-auto p-6">
-            <button
-             onClick={() => setIsCreateResult(false)}
-              className="text-red-600 text-2xl font-bold cursor-pointer right-4"
-            >
-              ×
-            </button>
-            <h2 className="text-2xl font-semibold mb-4 text-center">Create Result</h2>
-            <CreateResult />
-          </div>
-        </div>
-      )}
+            onClick={() => setIsCreateResult(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Create Result
+          </button>
+          {iscreateResult && (
+            <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
+              <div className="bg-white rounded-lg shadow-xl w-auto max-h-[90vh] overflow-y-auto p-6">
+                <button
+                  onClick={() => setIsCreateResult(false)}
+                  className="text-red-600 text-2xl font-bold cursor-pointer right-4"
+                >
+                  ×
+                </button>
+                <h2 className="text-2xl font-semibold mb-4 text-center">
+                  Create Result
+                </h2>
+                <CreateResult />
+              </div>
+            </div>
+          )}
           <button
-  onClick={() => window.open('/results', '_blank')}
-  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
->
-  Show Results
-</button>
+            onClick={() => window.open("/results", "_blank")}
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          >
+            Show Results
+          </button>
           <button
             onClick={handleLogout}
             className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
           >
             Logout
           </button>
-
-
         </div>
         {/* <CreateResult />  */}
         <form
@@ -1040,13 +1190,14 @@ export const AdminPanel = () => {
                         Add Field Below
                       </button>
                       <button
-  type="button"
-  onClick={() => handleRemoveField(sectionIndex, fieldIndex)}
-  className="bg-red-500 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-red-600"
->
-  Remove Field
-</button>
-
+                        type="button"
+                        onClick={() =>
+                          handleRemoveField(sectionIndex, fieldIndex)
+                        }
+                        className="bg-red-500 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-red-600"
+                      >
+                        Remove Field
+                      </button>
                     </div>{" "}
                   </div>
                 ))}

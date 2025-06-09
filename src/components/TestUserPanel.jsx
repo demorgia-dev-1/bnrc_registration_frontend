@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "../api/api";
 
-
 import { useNavigate } from "react-router-dom";
 // import CreateResult from "./CreateExamResults";
 
@@ -141,12 +140,43 @@ function TestUserPanel() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [filteredSubmissions, setFilteredSubmissions] = useState([]);
-  // const [iscreateResult, setIsCreateResult] = useState(false)
-  
+  const [examDates, setExamDates] = useState([]);
+  const [selectedExamDate, setSelectedExamDate] = useState("");
 
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const staticExamDates = [
+    "2025-06-13",
+    "2025-06-14",
+    "2025-06-16",
+    "2025-06-17",
+    "2025-06-20",
+    "2025-06-21",
+    "2025-06-23",
+    "2025-06-24",
+    "2025-06-27",
+    "2025-06-28",
+    "2025-06-30",
+    "2025-07-01",
+    "2025-07-04",
+    "2025-07-05",
+    "2025-07-07",
+    "2025-07-08",
+    "2025-07-11",
+    "2025-07-12",
+    "2025-07-14",
+    "2025-07-15",
+    "2025-07-18",
+    "2025-07-19",
+    "2025-07-21",
+    "2025-07-22",
+    "2025-07-25",
+    "2025-07-26",
+    "2025-07-28",
+    "2025-07-29",
+  ];
+
+  const handleLogout = () => { 
     sessionStorage.clear();
     navigate("/login");
   };
@@ -177,6 +207,25 @@ function TestUserPanel() {
   };
 
   const currentUser = JSON.parse(sessionStorage.getItem("user"));
+
+  useEffect(() => {
+    if (!selectedFormId) return;
+
+    async function fetchExamDates() {
+      try {
+        const res = await axios.get(
+          `${API_BASE_URL}/api/forms/${selectedFormId}/exam-dates`
+        );
+        setExamDates(
+          res.data.examDates.sort((a, b) => new Date(a) - new Date(b))
+        );
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    fetchExamDates();
+  }, [selectedFormId]);
 
   useEffect(() => {
     const fetchForms = async () => {
@@ -241,30 +290,46 @@ function TestUserPanel() {
       ...s,
       verified: s.verified || false,
     }));
-    setFilteredSubmissions(enhanced);
-  }, [submissions, selectedFormId]);
 
-  const downloadSubmissionExcel = async (formId) => {
+    const filtered = selectedExamDate
+      ? enhanced.filter(
+          (s) =>
+            s.responses?.exam_date_selection &&
+            s.responses.exam_date_selection === selectedExamDate
+        )
+      : enhanced;
+
+    setFilteredSubmissions(filtered);
+  }, [submissions, selectedFormId, selectedExamDate]);
+
+  const downloadSubmissionExcel = async (formId, examDate) => {
     try {
       const token = sessionStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/api/download/submissions-excel?formId=${formId}`,
-        {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+
+      const url = new URL(`${API_BASE_URL}/api/download/submissions-excel`);
+      url.searchParams.append("formId", formId);
+      if (examDate) {
+        url.searchParams.append("examDate", examDate);
+      }
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
       if (!response.ok) throw new Error("Failed to download Excel");
 
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const blobUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
-      a.download = `submissions-${formId}.xlsx`;
+      a.href = blobUrl;
+      a.download = `submissions-${formId}${
+        examDate ? `-${examDate}` : ""
+      }.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error("Download error:", error);
       alert("Failed to download submissions.");
@@ -280,11 +345,12 @@ function TestUserPanel() {
       />
       <div className="absolute top-0 h-full flex flex-col items-center gap-4 justify-center z-10 w-full px-4">
         <div className="mt-5 p-8 rounded-lg flex flex-col flex-wrap justify-between gap-8 bg-white bg-opacity-90 shadow-2xl max-w-5xl w-full">
-          <h1 className="text-3xl font-extrabold text-blue-900 text-center drop-shadow-md underline">
-            Test User Panel
+          <h1 className="text-3xl font-extrabold text-blue-900 text-center drop-shadow-md ">
+            Competency Certification Verification Panel
           </h1>
           <div className="flex gap-8 items-center">
             <div className="flex flex-wrap justify-center gap-4 items-center">
+              {/* Form Selector */}
               <select
                 id="formSelect"
                 value={selectedFormId}
@@ -298,6 +364,23 @@ function TestUserPanel() {
                   </option>
                 ))}
               </select>
+
+              {/* Static Exam Date Filter */}
+              {submissions.length > 0 && (
+                <select
+                  id="dateFilter"
+                  value={selectedExamDate}
+                  onChange={(e) => setSelectedExamDate(e.target.value)}
+                className="cursor-pointer rounded-lg border border-blue-300 px-4 py-3 text-lg font-semibold text-blue-900 shadow-md hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                >
+                  <option value="">Select Exam Date</option>
+                  {staticExamDates.map((date) => (
+                    <option key={date} value={date}>
+                      {date}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="flex gap-8 items-center">
@@ -318,38 +401,13 @@ function TestUserPanel() {
                     ? "bg-green-600 text-white hover:bg-green-700"
                     : "bg-green-300 text-green-100 cursor-not-allowed"
                 }`}
-                onClick={() => downloadSubmissionExcel(selectedFormId)}
+                onClick={() =>
+                  downloadSubmissionExcel(selectedFormId, selectedExamDate)
+                }
                 disabled={!selectedFormId}
               >
                 Download Submissions Excel
               </button>
-                        {/* <button
-                      onClick={() => setIsCreateResult(true)}
-                      className="rounded-lg px-6 py-3 font-semibold shadow-lg transition duration-300 cursor-pointer bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                      Create Result
-                    </button>
-              {iscreateResult && (
-                      <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
-                        <div className="bg-white rounded-lg shadow-xl w-auto max-h-[90vh] overflow-y-auto p-6">
-                          <button
-                           onClick={() => setIsCreateResult(false)}
-                            className="text-red-600 text-2xl font-bold cursor-pointer right-4"
-                          >
-                            ×
-                          </button>
-                          <h2 className="text-2xl font-semibold mb-4 text-center">Create Result</h2>
-                          <CreateResult />
-                        </div>
-                      </div>
-                    )} */}
-{/*               
-                        <button
-                onClick={() => window.open('/results', '_blank')}
-                className="rounded-lg px-6 py-3 font-semibold shadow-lg transition duration-300 cursor-pointer bg-green-600 text-white hover:bg-green-700"
-              >
-                Show Results
-              </button> */}
               <button
                 onClick={handleLogout}
                 className="rounded-lg px-6 py-3 font-semibold text-white bg-red-600 shadow-lg hover:bg-red-700 transition duration-300 cursor-pointer"
