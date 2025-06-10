@@ -150,14 +150,11 @@ const UserForm = ({ fields: initialFields }) => {
           order_id: data.paymentDetails.order_id,
           handler: async (response) => {
             try {
-              await axios.post(
-                `${API_BASE_URL}/api/payment/payment-success`,
-                {
-                  payment_id: response.razorpay_payment_id,
-                  order_id: response.razorpay_order_id,
-                  signature: response.razorpay_signature,
-                }
-              );
+              await axios.post(`${API_BASE_URL}/api/payment/payment-success`, {
+                payment_id: response.razorpay_payment_id,
+                order_id: response.razorpay_order_id,
+                signature: response.razorpay_signature,
+              });
 
               toast.success("Payment successful!");
               window.location.href = "/thankyou";
@@ -611,382 +608,406 @@ const UserForm = ({ fields: initialFields }) => {
     }
   };
 
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     setIsSubmitting(true);
+  //   const handleSubmit = async (e) => {
+  //     e.preventDefault();
+  //     setIsSubmitting(true);
 
-//     const normalizeSlot = (slot) => (slot ? slot.trim().toLowerCase() : "");
+  //     const normalizeSlot = (slot) => (slot ? slot.trim().toLowerCase() : "");
 
-//     const latestCounts = await fetchSlotCounts();
-//     console.log("latest counts", latestCounts);
+  //     const latestCounts = await fetchSlotCounts();
+  //     console.log("latest counts", latestCounts);
 
-//     const normalizedCounts = Object.fromEntries(
-//       Object.entries(latestCounts).map(([key, value]) => [
-//         normalizeSlot(key),
-//         value,
-//       ])
-//     );
+  //     const normalizedCounts = Object.fromEntries(
+  //       Object.entries(latestCounts).map(([key, value]) => [
+  //         normalizeSlot(key),
+  //         value,
+  //       ])
+  //     );
 
-//     setSlotCounts(latestCounts);
+  //     setSlotCounts(latestCounts);
 
-//     const validationErrors = await validateForm();
+  //     const validationErrors = await validateForm();
 
-//     if (Object.keys(validationErrors).length > 0) {
-//       setErrors(validationErrors);
-//       setIsSubmitting(false);
+  //     if (Object.keys(validationErrors).length > 0) {
+  //       setErrors(validationErrors);
+  //       setIsSubmitting(false);
 
-//       const firstErrorField = Object.keys(validationErrors)[0];
-//       const errorElement = fieldRefs.current?.[firstErrorField];
+  //       const firstErrorField = Object.keys(validationErrors)[0];
+  //       const errorElement = fieldRefs.current?.[firstErrorField];
 
-//       if (errorElement && errorElement.scrollIntoView) {
-//         errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
-//         errorElement.focus?.();
-//       }
+  //       if (errorElement && errorElement.scrollIntoView) {
+  //         errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+  //         errorElement.focus?.();
+  //       }
 
-//       return;
-//     }
+  //       return;
+  //     }
 
-//     try {
-//       const token = sessionStorage.getItem("token");
-//       const formData = new FormData();
-//       formData.append("form", form._id);
+  //     try {
+  //       const token = sessionStorage.getItem("token");
+  //       const formData = new FormData();
+  //       formData.append("form", form._id);
 
-//       const responses = {};
+  //       const responses = {};
 
-//       Object.entries(formResponses).forEach(([fieldName, value]) => {
-//         console.log("form response", formResponses);
-//         if (typeof value === "string") {
-//           value = value.trim();
-//           if (
-//             /bnrc/i.test(fieldName) ||
-//             /phone/i.test(fieldName) ||
-//             /aadhaar/i.test(fieldName)
-//           ) {
-//             value = value.toLowerCase();
-//           }
-//         }
+  //       Object.entries(formResponses).forEach(([fieldName, value]) => {
+  //         console.log("form response", formResponses);
+  //         if (typeof value === "string") {
+  //           value = value.trim();
+  //           if (
+  //             /bnrc/i.test(fieldName) ||
+  //             /phone/i.test(fieldName) ||
+  //             /aadhaar/i.test(fieldName)
+  //           ) {
+  //             value = value.toLowerCase();
+  //           }
+  //         }
 
-//         if (value instanceof File) {
-//           formData.append(fieldName, value);
-//         } else {
-//           responses[fieldName] = value;
-//           // const responses = {};
-// // const experienceFields = {};
+  //         if (value instanceof File) {
+  //           formData.append(fieldName, value);
+  //         } else {
+  //           responses[fieldName] = value;
+  //           // const responses = {};
+  // // const experienceFields = {};
 
-// // // First pass: build experienceFields and handle files / others
-// // Object.entries(formResponses).forEach(([fieldName, value]) => {
-// //   if (fieldName.includes("experience_value")) {
-// //     const base = fieldName.replace(/_?value$/, "");
-// //     experienceFields[base] = experienceFields[base] || {};
-// //     experienceFields[base].value = Number(value);
-// //   } else if (fieldName.includes("experience_unit")) {
-// //     const base = fieldName.replace(/_?unit$/, "");
-// //     experienceFields[base] = experienceFields[base] || {};
-// //     experienceFields[base].unit = value;
-// //   } else if (value instanceof File) {
-// //     formData.append(fieldName, value);
-// //   } else {
-// //     // For normal fields (string, etc.)
-// //     if (typeof value === "string") {
-// //       value = value.trim();
-// //       if (/bnrc/i.test(fieldName) || /phone/i.test(fieldName) || /aadhaar/i.test(fieldName)) {
-// //         value = value.toLowerCase();
-// //       }
-// //     }
-// //     responses[fieldName] = value;
-// //   }
-// // });
+  // // // First pass: build experienceFields and handle files / others
+  // // Object.entries(formResponses).forEach(([fieldName, value]) => {
+  // //   if (fieldName.includes("experience_value")) {
+  // //     const base = fieldName.replace(/_?value$/, "");
+  // //     experienceFields[base] = experienceFields[base] || {};
+  // //     experienceFields[base].value = Number(value);
+  // //   } else if (fieldName.includes("experience_unit")) {
+  // //     const base = fieldName.replace(/_?unit$/, "");
+  // //     experienceFields[base] = experienceFields[base] || {};
+  // //     experienceFields[base].unit = value;
+  // //   } else if (value instanceof File) {
+  // //     formData.append(fieldName, value);
+  // //   } else {
+  // //     // For normal fields (string, etc.)
+  // //     if (typeof value === "string") {
+  // //       value = value.trim();
+  // //       if (/bnrc/i.test(fieldName) || /phone/i.test(fieldName) || /aadhaar/i.test(fieldName)) {
+  // //         value = value.toLowerCase();
+  // //       }
+  // //     }
+  // //     responses[fieldName] = value;
+  // //   }
+  // // });
 
-// // // Second pass: merge experienceFields into responses
-// // Object.entries(experienceFields).forEach(([baseField, val]) => {
-// //   responses[baseField] = val;
-// // });
+  // // // Second pass: merge experienceFields into responses
+  // // Object.entries(experienceFields).forEach(([baseField, val]) => {
+  // //   responses[baseField] = val;
+  // // });
 
-//         }
-//       });
+  //         }
+  //       });
 
-//       formData.append("responses", JSON.stringify(responses));
+  //       formData.append("responses", JSON.stringify(responses));
 
-//       const slotFieldName = Object.keys(responses).find((k) =>
-//         k.trim().toLowerCase().includes("slot")
-//       );
-//       const selectedSlot = responses[slotFieldName];
+  //       const slotFieldName = Object.keys(responses).find((k) =>
+  //         k.trim().toLowerCase().includes("slot")
+  //       );
+  //       const selectedSlot = responses[slotFieldName];
 
-//       const normalizedSlot = normalizeSlot(selectedSlot);
-//       const slotCount = normalizedCounts[normalizedSlot] || 0;
+  //       const normalizedSlot = normalizeSlot(selectedSlot);
+  //       const slotCount = normalizedCounts[normalizedSlot] || 0;
 
-//       console.log("Checking slot:", selectedSlot, latestCounts);
-//       console.log("slot count:", slotCount);
+  //       console.log("Checking slot:", selectedSlot, latestCounts);
+  //       console.log("slot count:", slotCount);
 
-//       const response = await axios.post(
-//         `${API_BASE_URL}/api/submit-form/${form._id}`,
-//         formData,
-//         {
-//           headers: {
-//             "Content-Type": "multipart/form-data",
-//             Authorization: `Bearer ${token}`,
-//           },
-//         }
-//       );
+  //       const response = await axios.post(
+  //         `${API_BASE_URL}/api/submit-form/${form._id}`,
+  //         formData,
+  //         {
+  //           headers: {
+  //             "Content-Type": "multipart/form-data",
+  //             Authorization: `Bearer ${token}`,
+  //           },
+  //         }
+  //       );
 
-//       if (response.status === 201) {
-//         toast.success("Form submitted successfully!");
-//         if (response.data.paymentRequired) {
-//           toast.info("A payment link has been sent to your email.");
-//         }
-//         setFormResponses({});
-//         setErrors({});
-//         Object.values(fileInputRefs.current).forEach((input) => {
-//           if (input) input.value = "";
-//         });
+  //       if (response.status === 201) {
+  //         toast.success("Form submitted successfully!");
+  //         if (response.data.paymentRequired) {
+  //           toast.info("A payment link has been sent to your email.");
+  //         }
+  //         setFormResponses({});
+  //         setErrors({});
+  //         Object.values(fileInputRefs.current).forEach((input) => {
+  //           if (input) input.value = "";
+  //         });
 
-//         const submissionId = response.data.submission._id;
-//         console.log("Submission ID from server:", submissionId);
-//         if (response.data.paymentRequired) {
-//           const data = await axios.post(
-//             `${API_BASE_URL}/api/payment/create-order/${submissionId}`
-//           );
-//           console.log("data", data);
-//           const options = {
-//             key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-//             amount: data.data.order.amount,
-//             currency: "INR",
-//             name: "form submission",
-//             description: "Form Submission Payment",
-//             order_id: data.data.order.id,
-//             handler: async (response) => {
-//               try {
-//                 await axios.post(
-//                   `${API_BASE_URL}/api/payment/payment-success/${submissionId}`,
-//                   {
-//                     payment_id: response.razorpay_payment_id,
-//                     order_id: response.razorpay_order_id,
-//                     signature: response.razorpay_signature,
-//                   }
-//                 );
+  //         const submissionId = response.data.submission._id;
+  //         console.log("Submission ID from server:", submissionId);
+  //         if (response.data.paymentRequired) {
+  //           const data = await axios.post(
+  //             `${API_BASE_URL}/api/payment/create-order/${submissionId}`
+  //           );
+  //           console.log("data", data);
+  //           const options = {
+  //             key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+  //             amount: data.data.order.amount,
+  //             currency: "INR",
+  //             name: "form submission",
+  //             description: "Form Submission Payment",
+  //             order_id: data.data.order.id,
+  //             handler: async (response) => {
+  //               try {
+  //                 await axios.post(
+  //                   `${API_BASE_URL}/api/payment/payment-success/${submissionId}`,
+  //                   {
+  //                     payment_id: response.razorpay_payment_id,
+  //                     order_id: response.razorpay_order_id,
+  //                     signature: response.razorpay_signature,
+  //                   }
+  //                 );
 
-//                 sessionStorage.setItem("submissionId", submissionId);
-//                 console.log(
-//                   "Redirecting to thankyou with submissionId:",
-//                   submissionId
-//                 );
-//                 window.location.href = `/thankyou?submissionId=${submissionId}`;
-//               } catch (err) {
-//                 console.error("Payment notification failed", err);
-//                 toast.error(
-//                   "Payment notification failed. Please contact support."
-//                 );
-//               }
-//             },
-//           };
+  //                 sessionStorage.setItem("submissionId", submissionId);
+  //                 console.log(
+  //                   "Redirecting to thankyou with submissionId:",
+  //                   submissionId
+  //                 );
+  //                 window.location.href = `/thankyou?submissionId=${submissionId}`;
+  //               } catch (err) {
+  //                 console.error("Payment notification failed", err);
+  //                 toast.error(
+  //                   "Payment notification failed. Please contact support."
+  //                 );
+  //               }
+  //             },
+  //           };
 
-//           const razorpay = new window.Razorpay(options);
-//           razorpay.open();
-//         } else {
-//           sessionStorage.setItem("submissionId", submissionId);
-//           window.location.href = `/thankyou?submissionId=${submissionId}`;
-//         }
+  //           const razorpay = new window.Razorpay(options);
+  //           razorpay.open();
+  //         } else {
+  //           sessionStorage.setItem("submissionId", submissionId);
+  //           window.location.href = `/thankyou?submissionId=${submissionId}`;
+  //         }
 
-//         setIsSubmitting(false);
-//       }
-//     } catch (error) {
-//       console.error("Submission failed:", error);
-//       const errorMsg =
-//         error.response?.data?.message ||
-//         error.message ||
-//         "Something went wrong";
-//       toast.error(`${errorMsg}`);
-//       setIsSubmitting(false);
-//     }
-//   };
+  //         setIsSubmitting(false);
+  //       }
+  //     } catch (error) {
+  //       console.error("Submission failed:", error);
+  //       const errorMsg =
+  //         error.response?.data?.message ||
+  //         error.message ||
+  //         "Something went wrong";
+  //       toast.error(`${errorMsg}`);
+  //       setIsSubmitting(false);
+  //     }
+  //   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setIsSubmitting(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
-  const normalizeSlot = (slot) => (slot ? slot.trim().toLowerCase() : "");
+    const normalizeSlot = (slot) => (slot ? slot.trim().toLowerCase() : "");
 
-  const latestCounts = await fetchSlotCounts();
-  console.log("latest counts", latestCounts);
+    const latestCounts = await fetchSlotCounts();
+    console.log("latest counts", latestCounts);
 
-  const normalizedCounts = Object.fromEntries(
-    Object.entries(latestCounts).map(([key, value]) => [
-      normalizeSlot(key),
-      value,
-    ])
-  );
+    const normalizedCounts = Object.fromEntries(
+      Object.entries(latestCounts).map(([key, value]) => [
+        normalizeSlot(key),
+        value,
+      ])
+    );
 
-  setSlotCounts(latestCounts);
+    setSlotCounts(latestCounts);
 
-  const validationErrors = await validateForm();
+    const validationErrors = await validateForm();
 
-  if (Object.keys(validationErrors).length > 0) {
-    setErrors(validationErrors);
-    setIsSubmitting(false);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      setIsSubmitting(false);
 
-    const firstErrorField = Object.keys(validationErrors)[0];
-    const errorElement = fieldRefs.current?.[firstErrorField];
+      const firstErrorField = Object.keys(validationErrors)[0];
+      const errorElement = fieldRefs.current?.[firstErrorField];
 
-    if (errorElement && errorElement.scrollIntoView) {
-      errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
-      errorElement.focus?.();
+      if (errorElement && errorElement.scrollIntoView) {
+        errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        errorElement.focus?.();
+      }
+
+      return;
     }
 
-    return;
-  }
+    try {
+      const token = sessionStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("form", form._id);
 
-  try {
-    const token = sessionStorage.getItem("token");
-    const formData = new FormData();
-    formData.append("form", form._id);
+      const responses = {};
 
-    const responses = {};
-
-    Object.entries(formResponses).forEach(([fieldName, value]) => {
-      console.log("form response", formResponses);
-      if (typeof value === "string") {
-        value = value.trim();
-        if (
-          /bnrc/i.test(fieldName) ||
-          /phone/i.test(fieldName) ||
-          /aadhaar/i.test(fieldName)
-        ) {
-          value = value.toLowerCase();
-        }
-      }
-
-      if (value instanceof File) {
-        formData.append(fieldName, value);
-      } else {
-        responses[fieldName] = value;
-      }
-    });
-
-    // ✅ FIXED: append responses after it’s populated
-    formData.append("responses", JSON.stringify(responses));
-
-    const slotFieldName = Object.keys(responses).find((k) =>
-      k.trim().toLowerCase().includes("slot")
-    );
-    const selectedSlot = responses[slotFieldName];
-
-    const normalizedSlot = normalizeSlot(selectedSlot);
-    const slotCount = normalizedCounts[normalizedSlot] || 0;
-
-    console.log("Checking slot:", selectedSlot, latestCounts);
-    console.log("slot count:", slotCount);
-
-    if (form.paymentRequired && (form.paymentRequired === true || form.paymentRequired === "true")) {
-      // ✅ Only then call backend to create Razorpay order
-      console.log("Submitting payment for form:", form._id, "paymentRequired:", form.paymentRequired);
-
-      const orderResponse = await axios.post(
-        `${API_BASE_URL}/api/payment/create-order`,
-        { formId: form._id },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const { order } = orderResponse.data;
-
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: order.amount,
-        currency: "INR",
-        name: "form submission",
-        description: "Form Submission Payment",
-        order_id: order.id,
-        handler: async (razorpayResponse) => {
-          try {
-            const paymentFormData = new FormData();
-            paymentFormData.append("formId", form._id);
-            paymentFormData.append("responses", JSON.stringify(responses));
-            paymentFormData.append("payment_id", razorpayResponse.razorpay_payment_id);
-            paymentFormData.append("order_id", razorpayResponse.razorpay_order_id);
-            paymentFormData.append("signature", razorpayResponse.razorpay_signature);
-
-            Object.entries(formResponses).forEach(([fieldName, value]) => {
-              if (value instanceof File) {
-                paymentFormData.append(fieldName, value);
-              }
-            });
-
-            const submitResponse = await axios.post(
-              `${API_BASE_URL}/api/payment/payment-success`,
-              paymentFormData,
-              {
-                headers: {
-                  "Content-Type": "multipart/form-data",
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-
-            toast.success("Form submitted and payment successful!");
-            setFormResponses({});
-            setErrors({});
-            Object.values(fileInputRefs.current).forEach((input) => {
-              if (input) input.value = "";
-            });
-
-            const submissionId = submitResponse.data.submission._id;
-            sessionStorage.setItem("submissionId", submissionId);
-            window.location.href = `/thankyou`;
-          } catch (err) {
-           console.error("Payment notification failed:", err?.response?.data || err.message, err);
-            toast.error("Payment notification failed. Please contact support.");
-          } finally {
-            setIsSubmitting(false);
+      Object.entries(formResponses).forEach(([fieldName, value]) => {
+        console.log("form response", formResponses);
+        if (typeof value === "string") {
+          value = value.trim();
+          if (
+            /bnrc/i.test(fieldName) ||
+            /phone/i.test(fieldName) ||
+            /aadhaar/i.test(fieldName)
+          ) {
+            value = value.toLowerCase();
           }
-        },
-        modal: {
-          ondismiss: () => {
-            setIsSubmitting(false);
-          },
-        },
-      };
-
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-formData.append("responses", JSON.stringify(responses)); 
-    } else {
-      const submitResponse = await axios.post(
-        `${API_BASE_URL}/api/submit-form/${form._id}`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${token}`,
-          },
         }
+
+        if (value instanceof File) {
+          formData.append(fieldName, value);
+        } else {
+          responses[fieldName] = value;
+        }
+      });
+
+      // ✅ FIXED: append responses after it’s populated
+      formData.append("responses", JSON.stringify(responses));
+
+      const slotFieldName = Object.keys(responses).find((k) =>
+        k.trim().toLowerCase().includes("slot")
       );
+      const selectedSlot = responses[slotFieldName];
 
-      if (submitResponse.status === 201) {
-        toast.success("Form submitted successfully!");
-        setFormResponses({});
-        setErrors({});
-        Object.values(fileInputRefs.current).forEach((input) => {
-          if (input) input.value = "";
-        });
+      const normalizedSlot = normalizeSlot(selectedSlot);
+      const slotCount = normalizedCounts[normalizedSlot] || 0;
 
-        const submissionId = submitResponse.data.submission._id;
-        sessionStorage.setItem("submissionId", submissionId);
-        window.location.href = `/thankyou`;
+      console.log("Checking slot:", selectedSlot, latestCounts);
+      console.log("slot count:", slotCount);
+
+      if (
+        form.paymentRequired &&
+        (form.paymentRequired === true || form.paymentRequired === "true")
+      ) {
+        // ✅ Only then call backend to create Razorpay order
+        console.log(
+          "Submitting payment for form:",
+          form._id,
+          "paymentRequired:",
+          form.paymentRequired
+        );
+
+        const orderResponse = await axios.post(
+          `${API_BASE_URL}/api/payment/create-order`,
+          { formId: form._id },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const { order } = orderResponse.data;
+
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          amount: order.amount,
+          currency: "INR",
+          name: "form submission",
+          description: "Form Submission Payment",
+          order_id: order.id,
+          handler: async (razorpayResponse) => {
+            try {
+              const paymentFormData = new FormData();
+              paymentFormData.append("formId", form._id);
+              paymentFormData.append("responses", JSON.stringify(responses));
+              paymentFormData.append(
+                "payment_id",
+                razorpayResponse.razorpay_payment_id
+              );
+              paymentFormData.append(
+                "order_id",
+                razorpayResponse.razorpay_order_id
+              );
+              paymentFormData.append(
+                "signature",
+                razorpayResponse.razorpay_signature
+              );
+
+              Object.entries(formResponses).forEach(([fieldName, value]) => {
+                if (value instanceof File) {
+                  paymentFormData.append(fieldName, value);
+                }
+              });
+
+              const submitResponse = await axios.post(
+                `${API_BASE_URL}/api/payment/payment-success`,
+                paymentFormData,
+                {
+                  headers: {
+                    "Content-Type": "multipart/form-data",
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+
+              toast.success("Form submitted and payment successful!");
+              setFormResponses({});
+              setErrors({});
+              Object.values(fileInputRefs.current).forEach((input) => {
+                if (input) input.value = "";
+              });
+
+              const submissionId = submitResponse.data.submission._id;
+              sessionStorage.setItem("submissionId", submissionId);
+              window.location.href = `/thankyou`;
+            } catch (err) {
+              console.error(
+                "Payment notification failed:",
+                err?.response?.data || err.message,
+                err
+              );
+              toast.error(
+                "Payment notification failed. Please contact support."
+              );
+            } finally {
+              setIsSubmitting(false);
+            }
+          },
+          modal: {
+            ondismiss: () => {
+              setIsSubmitting(false);
+            },
+          },
+        };
+
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+        formData.append("responses", JSON.stringify(responses));
+      } else {
+        const submitResponse = await axios.post(
+          `${API_BASE_URL}/api/submit-form/${form._id}`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (submitResponse.status === 201) {
+          toast.success("Form submitted successfully!");
+          setFormResponses({});
+          setErrors({});
+          Object.values(fileInputRefs.current).forEach((input) => {
+            if (input) input.value = "";
+          });
+
+          const submissionId = submitResponse.data.submission._id;
+          sessionStorage.setItem("submissionId", submissionId);
+          window.location.href = `/thankyou`;
+        }
+        setIsSubmitting(false);
       }
+    } catch (error) {
+      console.error("Submission failed:", error);
+      const errorMsg =
+        error.response?.data?.message ||
+        error.message ||
+        "Something went wrong";
+      toast.error(`${errorMsg}`);
       setIsSubmitting(false);
     }
-  } catch (error) {
-    console.error("Submission failed:", error);
-    const errorMsg =
-      error.response?.data?.message || error.message || "Something went wrong";
-    toast.error(`${errorMsg}`);
-    setIsSubmitting(false);
-  }
-};
-
+  };
 
   const isExperienceZero = () => {
     let experienceField = null;
@@ -1481,37 +1502,40 @@ formData.append("responses", JSON.stringify(responses));
                                         },
                                       });
                                     }}
-                                    includeDates={[
-                                      new Date("2025-06-13"),
-                                      new Date("2025-06-14"),
-                                      new Date("2025-06-16"),
-                                      new Date("2025-06-17"),
-                                      new Date("2025-06-20"),
-                                      new Date("2025-06-21"),
-                                      new Date("2025-06-23"),
-                                      new Date("2025-06-24"),
-                                      new Date("2025-06-27"),
-                                      new Date("2025-06-28"),
-                                      new Date("2025-06-30"),
-                                      new Date("2025-07-01"),
-                                      new Date("2025-07-04"),
-                                      new Date("2025-07-05"),
-                                      new Date("2025-07-07"),
-                                      new Date("2025-07-08"),
-                                      new Date("2025-07-11"),
-                                      new Date("2025-07-12"),
-                                      new Date("2025-07-14"),
-                                      new Date("2025-07-15"),
-                                      new Date("2025-07-18"),
-                                      new Date("2025-07-19"),
-                                      new Date("2025-07-21"),
-                                      new Date("2025-07-22"),
-                                      new Date("2025-07-25"),
-                                      new Date("2025-07-26"),
-                                      new Date("2025-07-28"),
-                                      new Date("2025-07-29"),
-                                      new Date("2025-07-12"),
-                                    ]}
+                                    includeDates={(() => {
+                                      const allowedDays = [1, 2, 5, 6]; // Mon, Tue, Fri, Sat
+                                      const start = new Date("2025-06-01");
+                                      const end = new Date("2025-07-31");
+                                      const todayStr = new Date()
+                                        .toISOString()
+                                        .split("T")[0];
+                                      const result = [];
+
+                                      for (
+                                        let d = new Date(start);
+                                        d <= end;
+                                        d.setDate(d.getDate() + 1)
+                                      ) {
+                                        const dateStr = d
+                                          .toISOString()
+                                          .split("T")[0];
+
+                                        if (
+                                          dateStr === "2025-06-13" ||
+                                          (dateStr >= "2025-06-25" &&
+                                            dateStr <= "2025-07-03") ||
+                                          dateStr === todayStr
+                                        ) {
+                                          continue;
+                                        }
+
+                                        if (allowedDays.includes(d.getDay())) {
+                                          result.push(new Date(d));
+                                        }
+                                      }
+
+                                      return result;
+                                    })()}
                                     minDate={new Date()}
                                     showMonthDropdown
                                     showYearDropdown
@@ -2028,19 +2052,21 @@ formData.append("responses", JSON.stringify(responses));
             {isSubmitting ? "Submitting..." : submitButtonText}
           </button>
         </div>
-{isSubmitting && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300 ease-in-out">
-    <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-sm w-full text-center animate-fadeInUp">
-      <h2 className="text-xl font-bold text-gray-800 mb-3">Please wait...</h2>
-      <p className="text-gray-600 mb-4">Do not close the window. Form submission in progress..</p>
-      <div className="flex justify-center">
-        <div className="h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    </div>
-  </div>
-)}
-
-
+        {isSubmitting && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300 ease-in-out">
+            <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-sm w-full text-center animate-fadeInUp">
+              <h2 className="text-xl font-bold text-gray-800 mb-3">
+                Please wait...
+              </h2>
+              <p className="text-gray-600 mb-4">
+                Do not close the window. Form submission in progress..
+              </p>
+              <div className="flex justify-center">
+                <div className="h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            </div>
+          </div>
+        )}
       </form>
     </div>
   );
