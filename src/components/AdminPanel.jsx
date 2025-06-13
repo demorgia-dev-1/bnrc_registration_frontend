@@ -130,6 +130,7 @@ const Modal = ({ show, onClose, data, children }) => {
   );
 };
 
+
 export const AdminPanel = () => {
   const [formName, setFormName] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -195,10 +196,6 @@ export const AdminPanel = () => {
     "2025-07-29",
   ];
 
-  // const filteredSubmissions = uploadedFiles.filter(
-  //   (submission) => submission.form?._id === selectedFormId
-  // );
-
   const filteredSubmissions = submissions.filter(
     (submission) =>
       submission.form?._id === selectedFormId &&
@@ -244,25 +241,6 @@ export const AdminPanel = () => {
 
     fetchForms();
   }, []);
-
-  // useEffect(() => {
-  //   const fetchSubmissions = async () => {
-  //     try {
-  //       const token = sessionStorage.getItem("token");
-  //       console.log("token", token);
-  //       const res = await axios.get(`${API_BASE_URL}/api/submissions`, {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       });
-  //       setUploadedFiles(res.data.submissions);
-  //     } catch (err) {
-  //       console.error("Error fetching submissions:", err);
-  //     }
-  //   };
-
-  //   fetchSubmissions();
-  // }, []);
 
   useEffect(() => {
     const fetchSubmissions = async () => {
@@ -364,39 +342,6 @@ export const AdminPanel = () => {
       }
     }
   };
-
-  // const downloadSubmissionExcel = async (formId) => {
-  //   try {
-  //     const token = sessionStorage.getItem("token");
-  //     console.log("token", token);
-  //     const response = await fetch(
-  //       `${API_BASE_URL}/api/download/submissions-excel?formId=${formId}`,
-  //       {
-  //         method: "GET",
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-
-  //     if (!response.ok) {
-  //       throw new Error("Failed to download Excel");
-  //     }
-
-  //     const blob = await response.blob();
-  //     const url = window.URL.createObjectURL(blob);
-  //     const a = document.createElement("a");
-  //     a.href = url;
-  //     a.download = `submissions-${formId}.xlsx`;
-  //     document.body.appendChild(a);
-  //     a.click();
-  //     a.remove();
-  //     window.URL.revokeObjectURL(url);
-  //   } catch (error) {
-  //     console.error("Download error:", error);
-  //     alert("Failed to download submissions.");
-  //   }
-  // };
 
   const downloadSubmissionExcel = async (formId, examDate) => {
     try {
@@ -745,8 +690,12 @@ export const AdminPanel = () => {
             <table className="min-w-full border border-gray-300">
               <thead>
                 <tr className="bg-gray-200 text-left">
+                <th className="p-2 border">Submission Date</th>
+
                   <th className="p-2 border">Candidate</th>
                   <th className="p-2 border">BNRC Registration</th>
+                  <th className="p-2 border">Payment Status</th>
+<th className="p-2 border">Amount</th>
                   {/* <th className="p-2 border">Submission ID</th> */}
                   <th className="p-2 border">Files</th>
                   <th className="p-2 border">Action</th>
@@ -768,6 +717,12 @@ export const AdminPanel = () => {
                 ) : (
                   filteredSubmissions.map((submission) => (
                     <tr key={submission._id} className="hover:bg-gray-50">
+                    <td className="p-2 border">
+  {submission.createdAt
+    ? new Date(submission.createdAt).toLocaleString()
+    : "N/A"}
+</td>
+
                       <td className="p-2 border">
                         {(() => {
                           {
@@ -805,6 +760,15 @@ export const AdminPanel = () => {
                             : "N/A";
                         })()}
                       </td>
+                      <td className="p-2 border">
+  {submission.paymentStatus || "N/A"}
+</td>
+<td className="p-2 border">
+  {submission.form?.paymentDetails?.amount
+  ? `₹${(submission.form.paymentDetails.amount / 100).toLocaleString("en-IN")}`
+  : "N/A"}
+
+</td>
                       {/* <td className="p-2 border">{submission._id}</td> */}
                       <td className="p-2 border">
                         {submission.uploadedFiles?.length > 0

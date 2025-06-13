@@ -176,7 +176,7 @@ function TestUserPanel() {
     "2025-07-29",
   ];
 
-  const handleLogout = () => { 
+  const handleLogout = () => {
     sessionStorage.clear();
     navigate("/login");
   };
@@ -371,7 +371,7 @@ function TestUserPanel() {
                   id="dateFilter"
                   value={selectedExamDate}
                   onChange={(e) => setSelectedExamDate(e.target.value)}
-                className="cursor-pointer rounded-lg border border-blue-300 px-4 py-3 text-lg font-semibold text-blue-900 shadow-md hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="cursor-pointer rounded-lg border border-blue-300 px-4 py-3 text-lg font-semibold text-blue-900 shadow-md hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                   <option value="">Select Exam Date</option>
                   {staticExamDates.map((date) => (
@@ -429,12 +429,15 @@ function TestUserPanel() {
             <table className="min-w-full border border-gray-300">
               <thead>
                 <tr className="bg-gray-200 text-left">
+                  <th className="p-2 border">Submission Date</th>
+
                   <th className="p-2 border">Candidate</th>
                   <th className="p-2 border">BNRC Registration</th>
+                  <th className="p-2 border">Payment Status</th>
+                  <th className="p-2 border">Amount</th>
                   {/* <th className="p-2 border">Submission ID</th> */}
                   <th className="p-2 border">Files</th>
                   <th className="p-2 border">Action</th>
-                  <th className="p-2 border">Verification</th>
                 </tr>
               </thead>
               <tbody>
@@ -453,6 +456,12 @@ function TestUserPanel() {
                 ) : (
                   filteredSubmissions.map((submission) => (
                     <tr key={submission._id} className="hover:bg-gray-50">
+                      <td className="p-2 border">
+                        {submission.createdAt
+                          ? new Date(submission.createdAt).toLocaleString()
+                          : "N/A"}
+                      </td>
+
                       <td className="p-2 border">
                         {(() => {
                           {
@@ -490,6 +499,16 @@ function TestUserPanel() {
                             : "N/A";
                         })()}
                       </td>
+                      <td className="p-2 border">
+                        {submission.paymentStatus || "N/A"}
+                      </td>
+                      <td className="p-2 border">
+                        {submission.form?.paymentDetails?.amount
+                          ? `₹${(
+                              submission.form.paymentDetails.amount / 100
+                            ).toLocaleString("en-IN")}`
+                          : "N/A"}
+                      </td>
                       {/* <td className="p-2 border">{submission._id}</td> */}
                       <td className="p-2 border">
                         {submission.uploadedFiles?.length > 0
@@ -503,27 +522,9 @@ function TestUserPanel() {
                             setSelectedSubmission(submission);
                             setShowDetailModal(true);
                           }}
-                          className="py-1 px-4 bg-green-500 text-white cursor-pointer rounded-lg shadow-lg hover:bg-green-600"
+                          className="py-1 px-4 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600"
                         >
                           View
-                        </button>
-                      </td>
-                      <td className="p-2 border">
-                        <button
-                          className={`py-1 px-4 rounded-lg cursor-pointer shadow-lg ${
-                            submission.verified
-                              ? "bg-green-600 cursor-not-allowed opacity-70"
-                              : "bg-red-600"
-                          } text-white`}
-                          onClick={() =>
-                            handleVerificationToggle(
-                              submission._id,
-                              submission.verified
-                            )
-                          }
-                          disabled={submission.verified} // disable if verified
-                        >
-                          {submission.verified ? "Verified" : "Not Verified"}
                         </button>
                       </td>
                     </tr>
