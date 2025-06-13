@@ -130,7 +130,6 @@ const Modal = ({ show, onClose, data, children }) => {
   );
 };
 
-
 export const AdminPanel = () => {
   const [formName, setFormName] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -162,46 +161,54 @@ export const AdminPanel = () => {
   const [examDates, setExamDates] = useState([]);
   const [selectedExamDate, setSelectedExamDate] = useState("");
   const [examFilteredSubmissions, setExamFilteredSubmissions] = useState([]);
+  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState("");
 
   const navigate = useNavigate();
 
-  const staticExamDates = [
-    "2025-06-13",
-    "2025-06-14",
-    "2025-06-16",
-    "2025-06-17",
-    "2025-06-20",
-    "2025-06-21",
-    "2025-06-23",
-    "2025-06-24",
-    "2025-06-27",
-    "2025-06-28",
-    "2025-06-30",
-    "2025-07-01",
-    "2025-07-04",
-    "2025-07-05",
-    "2025-07-07",
-    "2025-07-08",
-    "2025-07-11",
-    "2025-07-12",
-    "2025-07-14",
-    "2025-07-15",
-    "2025-07-18",
-    "2025-07-19",
-    "2025-07-21",
-    "2025-07-22",
-    "2025-07-25",
-    "2025-07-26",
-    "2025-07-28",
-    "2025-07-29",
-  ];
+  const staticExamDates = (() => {
+    const allowedDays = [1, 2, 5, 6]; // Mon, Tue, Fri, Sat
+    const start = new Date("2025-06-01");
+    const end = new Date("2025-07-31");
+    const todayStr = new Date().toISOString().split("T")[0];
+    const result = [];
 
-  const filteredSubmissions = submissions.filter(
-    (submission) =>
-      submission.form?._id === selectedFormId &&
-      (!selectedExamDate ||
-        submission.responses?.exam_date_selection === selectedExamDate)
-  );
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split("T")[0];
+
+      if (
+        dateStr === "2025-06-13" ||
+        (dateStr >= "2025-06-25" && dateStr <= "2025-07-03") ||
+        dateStr === todayStr
+      ) {
+        continue;
+      }
+
+      if (allowedDays.includes(d.getDay())) {
+        result.push(new Date(d));
+      }
+    }
+
+    return result;
+  })();
+
+  // const filteredSubmissions = submissions.filter(
+  //   (submission) =>
+  //     submission.form?._id === selectedFormId &&
+  //     (!selectedExamDate ||
+  //       submission.responses?.exam_date_selection === selectedExamDate)
+  // );
+
+  const filteredSubmissions = submissions.filter((submission) => {
+    const matchesForm = submission.form?._id === selectedFormId;
+    const matchesDate =
+      !selectedExamDate ||
+      submission.responses?.exam_date_selection === selectedExamDate;
+    const matchesPayment =
+      !selectedPaymentStatus ||
+      submission.paymentStatus === selectedPaymentStatus;
+
+    return matchesForm && matchesDate && matchesPayment;
+  });
 
   useEffect(() => {
     if (!selectedFormId) return;
@@ -659,21 +666,38 @@ export const AdminPanel = () => {
             </select>
 
             {selectedFormId && submissions.length > 0 && (
-              <select
-                id="dateFilter"
-                value={selectedExamDate}
-                onChange={(e) => setSelectedExamDate(e.target.value)}
-                className="py-2 px-3 rounded-md bg-blue-700 text-white cursor-pointer focus:outline-none hover:bg-blue-800"
-              >
-                <option value="">Select Exam Date</option>
-                {staticExamDates.map((date) => (
-                  <option key={date} value={date}>
-                    {date}
-                  </option>
-                ))}
-              </select>
+              <>
+                <select
+                  id="dateFilter"
+                  value={selectedExamDate}
+                  onChange={(e) => setSelectedExamDate(e.target.value)}
+                  className="py-2 px-3 rounded-md bg-blue-700 text-white cursor-pointer focus:outline-none hover:bg-blue-800"
+                >
+                  <option value="">Select Exam Date</option>
+                  {staticExamDates.map((date) => {
+                    const isoDate = date.toISOString().split("T")[0]; // e.g., "2025-06-16"
+                    return (
+                      <option key={isoDate} value={isoDate}>
+                        {date.toDateString()} {/* e.g., "Mon Jun 16 2025" */}
+                      </option>
+                    );
+                  })}
+                </select>
+
+                <select
+                  id="paymentFilter"
+                  value={selectedPaymentStatus}
+                  onChange={(e) => setSelectedPaymentStatus(e.target.value)}
+                  className="py-2 px-3 rounded-md bg-blue-700 text-white cursor-pointer focus:outline-none hover:bg-blue-800"
+                >
+                  <option value="">All Payments</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </>
             )}
           </div>
+
           {/* Show All Submissions Modal */}
           <button
             onClick={() => setShowListModal(true)}
@@ -690,12 +714,12 @@ export const AdminPanel = () => {
             <table className="min-w-full border border-gray-300">
               <thead>
                 <tr className="bg-gray-200 text-left">
-                <th className="p-2 border">Submission Date</th>
+                  <th className="p-2 border">Submission Date</th>
 
                   <th className="p-2 border">Candidate</th>
                   <th className="p-2 border">BNRC Registration</th>
                   <th className="p-2 border">Payment Status</th>
-<th className="p-2 border">Amount</th>
+                  <th className="p-2 border">Amount</th>
                   {/* <th className="p-2 border">Submission ID</th> */}
                   <th className="p-2 border">Files</th>
                   <th className="p-2 border">Action</th>
@@ -717,11 +741,11 @@ export const AdminPanel = () => {
                 ) : (
                   filteredSubmissions.map((submission) => (
                     <tr key={submission._id} className="hover:bg-gray-50">
-                    <td className="p-2 border">
-  {submission.createdAt
-    ? new Date(submission.createdAt).toLocaleString()
-    : "N/A"}
-</td>
+                      <td className="p-2 border">
+                        {submission.createdAt
+                          ? new Date(submission.createdAt).toLocaleString()
+                          : "N/A"}
+                      </td>
 
                       <td className="p-2 border">
                         {(() => {
@@ -760,15 +784,17 @@ export const AdminPanel = () => {
                             : "N/A";
                         })()}
                       </td>
+                      
                       <td className="p-2 border">
-  {submission.paymentStatus || "N/A"}
-</td>
-<td className="p-2 border">
-  {submission.form?.paymentDetails?.amount
-  ? `₹${(submission.form.paymentDetails.amount / 100).toLocaleString("en-IN")}`
-  : "N/A"}
-
-</td>
+                        {submission.paymentStatus || "N/A"}
+                      </td>
+                      <td className="p-2 border">
+                        {submission.form?.paymentDetails?.amount
+                          ? `₹${(
+                              submission.form.paymentDetails.amount / 100
+                            ).toLocaleString("en-IN")}`
+                          : "N/A"}
+                      </td>
                       {/* <td className="p-2 border">{submission._id}</td> */}
                       <td className="p-2 border">
                         {submission.uploadedFiles?.length > 0
