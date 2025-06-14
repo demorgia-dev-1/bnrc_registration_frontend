@@ -461,11 +461,7 @@ const UserForm = ({ fields: initialFields }) => {
       //   }
       // }
 
-      if (
-  isAadhaarField &&
-  value &&
-  (field.type === "text" || field.type === "number")
-) {
+      if (isAadhaarField && value && field.type !== "file") {
   if (!aadhaarRegex.test(value)) {
     errors[field.name] = "Aadhaar must be a 12-digit number.";
   } else {
