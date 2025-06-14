@@ -439,27 +439,54 @@ const UserForm = ({ fields: initialFields }) => {
         }
       }
 
-      if (isAadhaarField && value) {
-        if (!aadhaarRegex.test(value)) {
-          errors[field.name] = "Aadhaar must be a 12-digit number.";
-        } else {
-          try {
-            const { data } = await axios.post(
-              `${API_BASE_URL}/api/check-aadhar`,
-              {
-                formId: form?._id,
-                aadhar: value,
-              }
-            );
+      // if (isAadhaarField && value) {
+      //   if (!aadhaarRegex.test(value)) {
+      //     errors[field.name] = "Aadhaar must be a 12-digit number.";
+      //   } else {
+      //     try {
+      //       const { data } = await axios.post(
+      //         `${API_BASE_URL}/api/check-aadhar`,
+      //         {
+      //           formId: form?._id,
+      //           aadhar: value,
+      //         }
+      //       );
 
-            if (data.exists && data.submissionId !== fetchedSubmissionId) {
-              errors[field.name] = "This Aadhaar number is already used.";
-            }
-          } catch (err) {
-            console.error("Aadhaar check failed:", err);
-          }
+      //       if (data.exists && data.submissionId !== fetchedSubmissionId) {
+      //         errors[field.name] = "This Aadhaar number is already used.";
+      //       }
+      //     } catch (err) {
+      //       console.error("Aadhaar check failed:", err);
+      //     }
+      //   }
+      // }
+
+      if (
+  isAadhaarField &&
+  value &&
+  (field.type === "text" || field.type === "number")
+) {
+  if (!aadhaarRegex.test(value)) {
+    errors[field.name] = "Aadhaar must be a 12-digit number.";
+  } else {
+    try {
+      const { data } = await axios.post(
+        `${API_BASE_URL}/api/check-aadhar`,
+        {
+          formId: form?._id,
+          aadhar: value,
         }
+      );
+
+      if (data.exists && data.submissionId !== fetchedSubmissionId) {
+        errors[field.name] = "This Aadhaar number is already used.";
       }
+    } catch (err) {
+      console.error("Aadhaar check failed:", err);
+    }
+  }
+}
+
 
       if (isBnrcField && value) {
         try {
