@@ -791,7 +791,6 @@ const staticExamDates = (() => {
                       <td className="p-2 border">
                         {submission.form?.paymentDetails?.amount
                           ? `₹${submission.form.paymentDetails.amount.toLocaleString("en-IN")}`
-
                           : "N/A"}
                       </td>
                       {/* <td className="p-2 border">{submission._id}</td> */}
