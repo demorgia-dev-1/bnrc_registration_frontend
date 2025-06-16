@@ -165,78 +165,80 @@ const UserForm = ({ fields: initialFields }) => {
     }
   }, [formData]);
 
-  useEffect(() => {
-    const aadhar =
-      formResponses["aadhaar"] ||
-      formResponses["aadhaar_number"] ||
-      formResponses["aadhar_number"] ||
-      formResponses["adhar_number"];
-    const contact =
-      formResponses["contact"] ||
-      formResponses["contact_number"] ||
-      formResponses["phone"];
+useEffect(() => {
+  const aadhar =
+    formResponses["aadhaar"] ||
+    formResponses["aadhaar_number"] ||
+    formResponses["aadhar_number"] ||
+    formResponses["adhar_number"];
+  const contact =
+    formResponses["contact"] ||
+    formResponses["contact_number"] ||
+    formResponses["phone"];
 
-    // If Aadhaar/contact changed from what the loaded submission used, reset fetchedSubmissionId
-    if (
-      fetchedSubmissionId &&
-      prevAadhaarRef.current !== undefined &&
-      prevContactRef.current !== undefined &&
-      (aadhar !== prevAadhaarRef.current || contact !== prevContactRef.current)
-    ) {
-      setFetchedSubmissionId(null);
-    }
+  // If Aadhaar/contact changed from what the loaded submission used, reset fetchedSubmissionId
+  if (
+    fetchedSubmissionId &&
+    prevAadhaarRef.current !== undefined &&
+    prevContactRef.current !== undefined &&
+    (aadhar !== prevAadhaarRef.current || contact !== prevContactRef.current)
+  ) {
+    setFetchedSubmissionId(null);
+  }
 
-    if (
-      aadhar &&
-      contact &&
-      !fetchedSubmissionId &&
-      !isCheckingExisting &&
-      formId
-    ) {
-      setIsCheckingExisting(true);
+  if (
+    aadhar &&
+    contact &&
+    !fetchedSubmissionId &&
+    !isCheckingExisting &&
+    formId
+  ) {
+    setIsCheckingExisting(true);
 
-      axios
-        .get(`${API_BASE_URL}/api/submissions/check-aadhar-contact`, {
-          params: {
-            aadhar,
-            contact,
-            formId,
-          },
-        })
-        .then((res) => {
-          if (res.data.success && res.data.paymentStatus === "Pending") {
-            setFetchedSubmissionId(res.data.submissionId);
-            setFormResponses((prev) => ({
-              ...prev,
-              ...res.data.responses,
-            }));
-            toast.info("Previous form data loaded. You can now edit.");
-            prevAadhaarRef.current = aadhar;
-            prevContactRef.current = contact;
-          }
-        })
-        .catch(() => {
-          setFetchedSubmissionId(null);
-        })
-        .finally(() => {
-          setIsCheckingExisting(false);
-        });
-    }
-    // Update refs for next render
-    prevAadhaarRef.current = aadhar;
-    prevContactRef.current = contact;
-  }, [
-    formResponses["aadhaar"],
-    formResponses["aadhaar_number"],
-    formResponses["aadhar_number"],
-    formResponses["adhar_number"],
-    formResponses["contact"],
-    formResponses["contact_number"],
-    formResponses["phone"],
-    fetchedSubmissionId,
-    isCheckingExisting,
-    formId,
-  ]);
+    axios
+      .get(`${API_BASE_URL}/api/submissions/check-aadhar-contact`, {
+        params: {
+          aadhar,
+          contact,
+          formId,
+        },
+      })
+      .then((res) => {
+        if (res.data.success && ["Pending", "Failed"].includes(res.data.paymentStatus)) {
+          setFetchedSubmissionId(res.data.submissionId);
+          setFormResponses((prev) => ({
+            ...prev,
+            ...res.data.responses,
+          }));
+          toast.info("Previous form data loaded. You can now edit.");
+          prevAadhaarRef.current = aadhar;
+          prevContactRef.current = contact;
+        }
+      })
+      .catch(() => {
+        setFetchedSubmissionId(null);
+      })
+      .finally(() => {
+        setIsCheckingExisting(false);
+      });
+  }
+
+  // Update refs for next render
+  prevAadhaarRef.current = aadhar;
+  prevContactRef.current = contact;
+}, [
+  formResponses["aadhaar"],
+  formResponses["aadhaar_number"],
+  formResponses["aadhar_number"],
+  formResponses["adhar_number"],
+  formResponses["contact"],
+  formResponses["contact_number"],
+  formResponses["phone"],
+  fetchedSubmissionId,
+  isCheckingExisting,
+  formId,
+]);
+
 
   const toggleSection = (index) => {
     setVisibleSections((prev) =>
@@ -464,27 +466,26 @@ const UserForm = ({ fields: initialFields }) => {
       // }
 
       if (isAadhaarField && value && field.type !== "file") {
-  if (!aadhaarRegex.test(value)) {
-    errors[field.name] = "Aadhaar must be a 12-digit number.";
-  } else {
-    try {
-      const { data } = await axios.post(
-        `${API_BASE_URL}/api/check-aadhar`,
-        {
-          formId: form?._id,
-          aadhar: value,
+        if (!aadhaarRegex.test(value)) {
+          errors[field.name] = "Aadhaar must be a 12-digit number.";
+        } else {
+          try {
+            const { data } = await axios.post(
+              `${API_BASE_URL}/api/check-aadhar`,
+              {
+                formId: form?._id,
+                aadhar: value,
+              }
+            );
+
+            if (data.exists && data.submissionId !== fetchedSubmissionId) {
+              errors[field.name] = "This Aadhaar number is already used.";
+            }
+          } catch (err) {
+            console.error("Aadhaar check failed:", err);
+          }
         }
-      );
-
-      if (data.exists && data.submissionId !== fetchedSubmissionId) {
-        errors[field.name] = "This Aadhaar number is already used.";
       }
-    } catch (err) {
-      console.error("Aadhaar check failed:", err);
-    }
-  }
-}
-
 
       if (isBnrcField && value) {
         try {
@@ -666,7 +667,7 @@ const UserForm = ({ fields: initialFields }) => {
         console.log(
           "Submitting with fetchedSubmissionId:",
           fetchedSubmissionId
-        ); 
+        );
       }
 
       formData.append("responses", JSON.stringify(responses));
@@ -1129,7 +1130,7 @@ const UserForm = ({ fields: initialFields }) => {
                                 )}
                               </div>
                             )}
-                            
+
                             {field.type === "date" && (
                               <div>
                                 {/exam/i.test(field.name) ? (
