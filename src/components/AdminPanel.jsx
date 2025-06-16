@@ -54,7 +54,12 @@ const Modal = ({ show, onClose, data, children }) => {
                       <td className="border p-2">{field.label}</td>
                       <td className="border p-2">
                         {value && typeof value === "string" && (
-                          <div className="mb-2">{value}</div>
+                          <div className="mb-2">
+                            {field.name === "_years_of_experience" &&
+                            responseMap["_years_of_experience_unit"]
+                              ? `${value} ${responseMap["_years_of_experience_unit"]}`
+                              : value}
+                          </div>
                         )}
                         {files?.length > 0 && (
                           <div className="flex gap-3 flex-wrap">

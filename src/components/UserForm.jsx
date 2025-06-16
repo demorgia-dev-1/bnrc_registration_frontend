@@ -165,80 +165,82 @@ const UserForm = ({ fields: initialFields }) => {
     }
   }, [formData]);
 
-useEffect(() => {
-  const aadhar =
-    formResponses["aadhaar"] ||
-    formResponses["aadhaar_number"] ||
-    formResponses["aadhar_number"] ||
-    formResponses["adhar_number"];
-  const contact =
-    formResponses["contact"] ||
-    formResponses["contact_number"] ||
-    formResponses["phone"];
+  useEffect(() => {
+    const aadhar =
+      formResponses["aadhaar"] ||
+      formResponses["aadhaar_number"] ||
+      formResponses["aadhar_number"] ||
+      formResponses["adhar_number"];
+    const contact =
+      formResponses["contact"] ||
+      formResponses["contact_number"] ||
+      formResponses["phone"];
 
-  // If Aadhaar/contact changed from what the loaded submission used, reset fetchedSubmissionId
-  if (
-    fetchedSubmissionId &&
-    prevAadhaarRef.current !== undefined &&
-    prevContactRef.current !== undefined &&
-    (aadhar !== prevAadhaarRef.current || contact !== prevContactRef.current)
-  ) {
-    setFetchedSubmissionId(null);
-  }
+    // If Aadhaar/contact changed from what the loaded submission used, reset fetchedSubmissionId
+    if (
+      fetchedSubmissionId &&
+      prevAadhaarRef.current !== undefined &&
+      prevContactRef.current !== undefined &&
+      (aadhar !== prevAadhaarRef.current || contact !== prevContactRef.current)
+    ) {
+      setFetchedSubmissionId(null);
+    }
 
-  if (
-    aadhar &&
-    contact &&
-    !fetchedSubmissionId &&
-    !isCheckingExisting &&
-    formId
-  ) {
-    setIsCheckingExisting(true);
+    if (
+      aadhar &&
+      contact &&
+      !fetchedSubmissionId &&
+      !isCheckingExisting &&
+      formId
+    ) {
+      setIsCheckingExisting(true);
 
-    axios
-      .get(`${API_BASE_URL}/api/submissions/check-aadhar-contact`, {
-        params: {
-          aadhar,
-          contact,
-          formId,
-        },
-      })
-      .then((res) => {
-        if (res.data.success && ["Pending", "Failed"].includes(res.data.paymentStatus)) {
-          setFetchedSubmissionId(res.data.submissionId);
-          setFormResponses((prev) => ({
-            ...prev,
-            ...res.data.responses,
-          }));
-          toast.info("Previous form data loaded. You can now edit.");
-          prevAadhaarRef.current = aadhar;
-          prevContactRef.current = contact;
-        }
-      })
-      .catch(() => {
-        setFetchedSubmissionId(null);
-      })
-      .finally(() => {
-        setIsCheckingExisting(false);
-      });
-  }
+      axios
+        .get(`${API_BASE_URL}/api/submissions/check-aadhar-contact`, {
+          params: {
+            aadhar,
+            contact,
+            formId,
+          },
+        })
+        .then((res) => {
+          if (
+            res.data.success &&
+            ["Pending", "Failed"].includes(res.data.paymentStatus)
+          ) {
+            setFetchedSubmissionId(res.data.submissionId);
+            setFormResponses((prev) => ({
+              ...prev,
+              ...res.data.responses,
+            }));
+            toast.info("Previous form data loaded. You can now edit.");
+            prevAadhaarRef.current = aadhar;
+            prevContactRef.current = contact;
+          }
+        })
+        .catch(() => {
+          setFetchedSubmissionId(null);
+        })
+        .finally(() => {
+          setIsCheckingExisting(false);
+        });
+    }
 
-  // Update refs for next render
-  prevAadhaarRef.current = aadhar;
-  prevContactRef.current = contact;
-}, [
-  formResponses["aadhaar"],
-  formResponses["aadhaar_number"],
-  formResponses["aadhar_number"],
-  formResponses["adhar_number"],
-  formResponses["contact"],
-  formResponses["contact_number"],
-  formResponses["phone"],
-  fetchedSubmissionId,
-  isCheckingExisting,
-  formId,
-]);
-
+    // Update refs for next render
+    prevAadhaarRef.current = aadhar;
+    prevContactRef.current = contact;
+  }, [
+    formResponses["aadhaar"],
+    formResponses["aadhaar_number"],
+    formResponses["aadhar_number"],
+    formResponses["adhar_number"],
+    formResponses["contact"],
+    formResponses["contact_number"],
+    formResponses["phone"],
+    fetchedSubmissionId,
+    isCheckingExisting,
+    formId,
+  ]);
 
   const toggleSection = (index) => {
     setVisibleSections((prev) =>
@@ -1170,12 +1172,14 @@ useEffect(() => {
                                       const allowedDays = [1, 2, 5, 6]; // Mon, Tue, Fri, Sat
                                       const start = new Date("2025-06-01");
                                       const end = new Date("2025-07-31");
-                                     {/* const todayStr = new Date()
+                                      {
+                                        /* const todayStr = new Date()
                                         .toISOString()
-                                        .split("T")[0]; */}
+                                        .split("T")[0]; */
+                                      }
 
-                                        const tomorrow = new Date();
-tomorrow.setDate(tomorrow.getDate() + 1);
+                                      const tomorrow = new Date();
+                                      tomorrow.setDate(tomorrow.getDate() + 1);
 
                                       const result = [];
 
@@ -1192,7 +1196,7 @@ tomorrow.setDate(tomorrow.getDate() + 1);
                                           dateStr === "2025-06-13" ||
                                           (dateStr >= "2025-06-25" &&
                                             dateStr <= "2025-07-03") ||
-                                           d <= tomorrow
+                                          d <= tomorrow
                                         ) {
                                           continue;
                                         }

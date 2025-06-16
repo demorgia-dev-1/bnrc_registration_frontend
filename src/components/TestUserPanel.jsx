@@ -55,7 +55,12 @@ const Modal = ({ show, onClose, data, children }) => {
                       <td className="border p-2">{field.label}</td>
                       <td className="border p-2">
                         {value && typeof value === "string" && (
-                          <div className="mb-2">{value}</div>
+                          <div className="mb-2">
+                            {field.name === "_years_of_experience" &&
+                            responseMap["_years_of_experience_unit"]
+                              ? `${value} ${responseMap["_years_of_experience_unit"]}`
+                              : value}
+                          </div>
                         )}
                         {files?.length > 0 && (
                           <div className="flex gap-3 flex-wrap">
@@ -146,32 +151,31 @@ function TestUserPanel() {
 
   const navigate = useNavigate();
 
-const staticExamDates = (() => {
-  const allowedDays = [1, 2, 5, 6]; // Mon, Tue, Fri, Sat
-  const start = new Date("2025-06-01");
-  const end = new Date("2025-07-31");
-  const todayStr = new Date().toISOString().split("T")[0];
-  const result = [];
+  const staticExamDates = (() => {
+    const allowedDays = [1, 2, 5, 6]; // Mon, Tue, Fri, Sat
+    const start = new Date("2025-06-01");
+    const end = new Date("2025-07-31");
+    const todayStr = new Date().toISOString().split("T")[0];
+    const result = [];
 
-  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    const dateStr = d.toISOString().split("T")[0];
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split("T")[0];
 
-    if (
-      dateStr === "2025-06-13" ||
-      (dateStr >= "2025-06-25" && dateStr <= "2025-07-03")
-      // ⛔ Removed: || dateStr === todayStr
-    ) {
-      continue;
+      if (
+        dateStr === "2025-06-13" ||
+        (dateStr >= "2025-06-25" && dateStr <= "2025-07-03")
+        // ⛔ Removed: || dateStr === todayStr
+      ) {
+        continue;
+      }
+
+      if (allowedDays.includes(d.getDay())) {
+        result.push(new Date(d));
+      }
     }
 
-    if (allowedDays.includes(d.getDay())) {
-      result.push(new Date(d));
-    }
-  }
-
-  return result;
-})();
-
+    return result;
+  })();
 
   const handleLogout = () => {
     sessionStorage.clear();
@@ -519,7 +523,9 @@ const staticExamDates = (() => {
                       </td>
                       <td className="p-2 border">
                         {submission.form?.paymentDetails?.amount
-                          ? `₹${submission.form.paymentDetails.amount.toLocaleString("en-IN")}`
+                          ? `₹${submission.form.paymentDetails.amount.toLocaleString(
+                              "en-IN"
+                            )}`
                           : "N/A"}
                       </td>
                       {/* <td className="p-2 border">{submission._id}</td> */}
