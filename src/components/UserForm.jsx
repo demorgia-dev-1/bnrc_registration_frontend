@@ -1170,9 +1170,13 @@ useEffect(() => {
                                       const allowedDays = [1, 2, 5, 6]; // Mon, Tue, Fri, Sat
                                       const start = new Date("2025-06-01");
                                       const end = new Date("2025-07-31");
-                                      const todayStr = new Date()
+                                     {/* const todayStr = new Date()
                                         .toISOString()
-                                        .split("T")[0];
+                                        .split("T")[0]; */}
+
+                                        const tomorrow = new Date();
+tomorrow.setDate(tomorrow.getDate() + 1);
+
                                       const result = [];
 
                                       for (
@@ -1188,7 +1192,7 @@ useEffect(() => {
                                           dateStr === "2025-06-13" ||
                                           (dateStr >= "2025-06-25" &&
                                             dateStr <= "2025-07-03") ||
-                                          dateStr === todayStr
+                                           d <= tomorrow
                                         ) {
                                           continue;
                                         }
