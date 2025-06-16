@@ -168,6 +168,7 @@ const UserForm = ({ fields: initialFields }) => {
   useEffect(() => {
     const aadhar =
       formResponses["aadhaar"] ||
+      formResponses["aadhaar_number"] ||
       formResponses["aadhar_number"] ||
       formResponses["adhar_number"];
     const contact =
@@ -226,6 +227,7 @@ const UserForm = ({ fields: initialFields }) => {
     prevContactRef.current = contact;
   }, [
     formResponses["aadhaar"],
+    formResponses["aadhaar_number"],
     formResponses["aadhar_number"],
     formResponses["adhar_number"],
     formResponses["contact"],
