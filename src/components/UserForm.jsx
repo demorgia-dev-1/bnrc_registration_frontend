@@ -804,10 +804,31 @@ const UserForm = ({ fields: initialFields }) => {
         encType="multipart/form-data"
         className="w-full md:mx-[15%] sm:mx-auto bg-white p-8 rounded shadow-lg space-y-10"
       >
+        <div className="flex items-center justify-between max-w-6xl mx-auto px-4">
+          {/* Left Logo */}
+          <img
+            src="/BNRC.png"
+            alt="BNRC logo"
+            className="h-12 w-12 rounded-full"
+          />
+
+          {/* Heading */}
+          <h2 className="text-2xl font-bold text-white bg-blue-900 p-2 text-center flex-1 mx-4 w-full max-w-[600px]">
+            {formData.formName}
+          </h2>
+
+          {/* Right Logo */}
+          <img
+            src="/logo.jpg"
+            alt="Demorgia logo"
+            className="h-15 w-15 rounded-full"
+          />
+        </div>
+
         {/* Form Title */}
-        <h2 className="text-2xl font-bold text-center mb-6 bg-blue-900 p-2 text-white">
+        {/* <h2 className="text-2xl font-bold text-center mb-6 bg-blue-900 p-2 text-white">
           {formData.formName}
-        </h2>
+        </h2> */}
         {formData.instructionsTitle && (
           <p className="py-1 px-2 text-gray-700 text-start bg-gray-200 text-lg font-semibold">
             {formData.instructionsTitle}
