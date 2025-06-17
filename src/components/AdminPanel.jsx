@@ -355,39 +355,38 @@ const staticExamDates = (() => {
     }
   };
 
-  const downloadSubmissionExcel = async (formId, examDate) => {
-    try {
-      const token = sessionStorage.getItem("token");
+const downloadSubmissionExcel = async (formId, examDate, paymentStatus) => {
+  try {
+    const token = sessionStorage.getItem("token");
 
-      const url = new URL(`${API_BASE_URL}/api/download/submissions-excel`);
-      url.searchParams.append("formId", formId);
-      if (examDate) {
-        url.searchParams.append("examDate", examDate);
-      }
+    const url = new URL(`${API_BASE_URL}/api/download/submissions-excel`);
+    url.searchParams.append("formId", formId);
+    if (examDate) url.searchParams.append("examDate", examDate);
+    if (paymentStatus) url.searchParams.append("paymentStatus", paymentStatus); // ✅ ADD THIS LINE
 
-      const response = await fetch(url, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    const response = await fetch(url, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      if (!response.ok) throw new Error("Failed to download Excel");
+    if (!response.ok) throw new Error("Failed to download Excel");
 
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = `submissions-${formId}${
-        examDate ? `-${examDate}` : ""
-      }.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-      console.error("Download error:", error);
-      alert("Failed to download submissions.");
-    }
-  };
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = `submissions-${formId}${
+      examDate ? `-${examDate}` : ""
+    }${paymentStatus ? `-${paymentStatus}` : ""}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    console.error("Download error:", error);
+    alert("Failed to download submissions.");
+  }
+};
 
   const handleEditForm = async () => {
     if (!formIdInput) {
@@ -841,11 +840,12 @@ const staticExamDates = (() => {
           </button>
 
           <button
-            // onClick={downloadSubmissionExcel}
-            onClick={() => downloadSubmissionExcel(selectedFormId)}
+            onClick={() =>
+                  downloadSubmissionExcel(selectedFormId, selectedExamDate, selectedPaymentStatus )
+                }
             className="py-2 px-4 bg-blue-700 text-white rounded-lg shadow-xl hover:bg-blue-800 cursor-pointer"
           >
-            Download Submissions
+            Download Submissions Excel
           </button>
           <button
             onClick={() => setIsCreateResult(true)}
