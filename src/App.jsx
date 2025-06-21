@@ -1,48 +1,37 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import UserForm from "./components/UserForm";
-import { AdminPanel } from "./components/AdminPanel";
 import Login from "./components/Login";
-import { ToastContainer } from "react-toastify";
 import TestUserPanel from "./components/TestUserPanel";
-import "react-toastify/dist/ReactToastify.css";
+import { AdminPanel } from "./components/AdminPanel";
+import UserForm from "./components/UserForm";
 import ThankYou from "./components/Thankyou";
 import AllExamResults from "./components/AllExamResults";
+import ProtectedRoute from "./components/ProtectedRoute"; // <-- new
 
 export default function App() {
-  const email = sessionStorage.getItem("email");
-
   return (
     <>
-      <ToastContainer position="top-right" />
-
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
 
-        {/* Test User route */}
         <Route
           path="/test-user"
           element={
-            email === "testuser@gmail.com" ? (
+            <ProtectedRoute roleRequired="testuser">
               <TestUserPanel />
-            ) : (
-              <Navigate to="/login" />
-            )
+            </ProtectedRoute>
           }
         />
-
-        {/* Admin Panel route */}
         <Route
           path="/admin-panel"
           element={
-            email !== "testuser@gmail.com" ? (
+            <ProtectedRoute roleRequired="admin">
               <AdminPanel />
-            ) : (
-              <Navigate to="/login" />
-            )
+            </ProtectedRoute>
           }
         />
 
+        {/* Open Routes */}
         <Route path="/user-form/:formId" element={<UserForm />} />
         <Route path="/pay/:submissionId" element={<UserForm />} />
         <Route path="/thankyou" element={<ThankYou />} />

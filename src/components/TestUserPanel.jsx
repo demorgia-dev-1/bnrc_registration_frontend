@@ -3,14 +3,12 @@ import axios from "axios";
 import { API_BASE_URL } from "../api/api";
 
 import { useNavigate } from "react-router-dom";
-// import CreateResult from "./CreateExamResults";
 
 const Modal = ({ show, onClose, data, children }) => {
   const [previewImage, setPreviewImage] = useState(null);
 
   if (!show) return null;
 
-  // const formFields = data?.form?.fields || [];
   const formFields = (data?.form?.sections || []).flatMap(
     (section) => section.fields || []
   );
@@ -149,7 +147,16 @@ function TestUserPanel() {
   const [selectedExamDate, setSelectedExamDate] = useState("");
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState("");
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 25;
+
   const navigate = useNavigate();
+
+  const totalPages = Math.ceil(filteredSubmissions.length / itemsPerPage);
+  const paginatedSubmissions = filteredSubmissions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const staticExamDates = (() => {
     const allowedDays = [1, 2, 5, 6]; // Mon, Tue, Fri, Sat
@@ -306,304 +313,320 @@ function TestUserPanel() {
     setFilteredSubmissions(filtered);
   }, [submissions, selectedFormId, selectedExamDate, selectedPaymentStatus]);
 
-const downloadSubmissionExcel = async (formId, examDate, paymentStatus) => {
-  try {
-    const token = sessionStorage.getItem("token");
+  const downloadSubmissionExcel = async (formId, examDate, paymentStatus) => {
+    try {
+      const token = sessionStorage.getItem("token");
 
-    const url = new URL(`${API_BASE_URL}/api/download/submissions-excel`);
-    url.searchParams.append("formId", formId);
-    if (examDate) url.searchParams.append("examDate", examDate);
-    if (paymentStatus) url.searchParams.append("paymentStatus", paymentStatus); // ✅ ADD THIS LINE
+      const url = new URL(`${API_BASE_URL}/api/download/submissions-excel`);
+      url.searchParams.append("formId", formId);
+      if (examDate) url.searchParams.append("examDate", examDate);
+      if (paymentStatus)
+        url.searchParams.append("paymentStatus", paymentStatus); // ✅ ADD THIS LINE
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    if (!response.ok) throw new Error("Failed to download Excel");
+      if (!response.ok) throw new Error("Failed to download Excel");
 
-    const blob = await response.blob();
-    const blobUrl = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = blobUrl;
-    a.download = `submissions-${formId}${
-      examDate ? `-${examDate}` : ""
-    }${paymentStatus ? `-${paymentStatus}` : ""}.xlsx`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(blobUrl);
-  } catch (error) {
-    console.error("Download error:", error);
-    alert("Failed to download submissions.");
-  }
-};
-
-
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `submissions-${formId}${examDate ? `-${examDate}` : ""}${
+        paymentStatus ? `-${paymentStatus}` : ""
+      }.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download error:", error);
+      alert("Failed to download submissions.");
+    }
+  };
   return (
-    <div className="relative min-h-screen bg-gradient-to-tr from-blue-50 via-white to-blue-100">
-      <img
-        src="/background.jpg"
-        alt="Background"
-        className="w-full h-full object-cover absolute inset-0 opacity-20"
-      />
-      <div className="absolute top-0 h-full flex flex-col items-center gap-4 justify-center z-10 w-full px-4">
-        <div className="mt-5 p-8 rounded-lg flex flex-col flex-wrap justify-between gap-8 bg-white bg-opacity-90 shadow-2xl max-w-5xl w-full">
-          <h1 className="text-3xl font-extrabold text-blue-900 text-center drop-shadow-md ">
-            Competency Certification Verification Panel
-          </h1>
-          <div className="flex gap-8 items-center">
-            <div className="flex flex-wrap justify-center gap-4 items-center">
-              {/* Form Selector */}
-              <select
-                id="formSelect"
-                value={selectedFormId}
-                onChange={(e) => setSelectedFormId(e.target.value)}
-                className="cursor-pointer rounded-lg border border-blue-300 px-4 py-3 text-lg font-semibold text-blue-900 shadow-md hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              >
-                <option value="">Select a form</option>
-                {forms.map((form) => (
-                  <option key={form._id} value={form._id}>
-                    {form.formName}
-                  </option>
-                ))}
-              </select>
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-sky-300 via-white to-indigo-400 transition-all duration-500">
+      <div className="w-full max-w-6xl bg-white/90 rounded-2xl shadow-2xl border border-gray-300 px-8 py-10 flex flex-col gap-10">
+        <h1 className="text-3xl md:text-4xl font-bold text-center text-gray-800">
+          Competency Certification Verification Panel
+        </h1>
 
-              {/* Static Exam Date Filter */}
-              {submissions.length > 0 && (
-                <>
-                  <select
-                    id="dateFilter"
-                    value={selectedExamDate}
-                    onChange={(e) => setSelectedExamDate(e.target.value)}
-                    className="py-2 px-3 rounded-md bg-blue-700 text-white cursor-pointer focus:outline-none hover:bg-blue-800"
-                  >
-                    <option value="">Select Exam Date</option>
-                    {staticExamDates.map((date) => {
-                      const isoDate = date.toISOString().split("T")[0]; // e.g., "2025-06-16"
-                      return (
-                        <option key={isoDate} value={isoDate}>
-                          {date.toDateString()} {/* e.g., "Mon Jun 16 2025" */}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <select
-                    id="paymentFilter"
-                    value={selectedPaymentStatus}
-                    onChange={(e) => setSelectedPaymentStatus(e.target.value)}
-                    className="py-2 px-3 rounded-md bg-blue-700 text-white cursor-pointer focus:outline-none hover:bg-blue-800"
-                  >
-                    <option value="">All Payments</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Pending">Pending</option>
-                  </select>
-                </>
-              )}
-            </div>
+        {/* Filters + Actions */}
+        <div className="flex flex-col md:flex-row justify-between gap-6 items-center">
+          {/* Dropdown Filters */}
+          <div className="flex flex-wrap justify-center gap-4">
+            <select
+              value={selectedFormId}
+              onChange={(e) => setSelectedFormId(e.target.value)}
+              className="px-4 py-2 rounded-md border border-gray-300 bg-gray-50 text-gray-800 shadow-sm focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Form</option>
+              {forms.map((form) => (
+                <option key={form._id} value={form._id}>
+                  {form.formName}
+                </option>
+              ))}
+            </select>
 
-            <div className="flex gap-8 items-center">
-              <button
-                onClick={() => setShowListModal(true)}
-                disabled={!selectedFormId}
-                className={`rounded-lg px-6 py-3 font-semibold text-white shadow-lg transition duration-300 cursor-pointer ${
-                  selectedFormId
-                    ? "bg-blue-600 hover:bg-blue-700"
-                    : "bg-blue-300 cursor-not-allowed"
-                }`}
-              >
-                Show Submissions
-              </button>
-              <button
-                className={`rounded-lg px-6 py-3 font-semibold shadow-lg transition duration-300 cursor-pointer ${
-                  selectedFormId
-                    ? "bg-green-600 text-white hover:bg-green-700"
-                    : "bg-green-300 text-green-100 cursor-not-allowed"
-                }`}
-                onClick={() =>
-                  downloadSubmissionExcel(selectedFormId, selectedExamDate, selectedPaymentStatus )
-                }
-                disabled={!selectedFormId}
-              >
-                Download Submissions Excel
-              </button>
-              <button
-                onClick={handleLogout}
-                className="rounded-lg px-6 py-3 font-semibold text-white bg-red-600 shadow-lg hover:bg-red-700 transition duration-300 cursor-pointer"
-              >
-                Logout
-              </button>
-            </div>
+            {submissions.length > 0 && (
+              <>
+                <select
+                  value={selectedExamDate}
+                  onChange={(e) => setSelectedExamDate(e.target.value)}
+                  className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 focus:outline-none"
+                >
+                  <option value="">Exam Date</option>
+                  {staticExamDates.map((date) => {
+                    const isoDate = date.toISOString().split("T")[0];
+                    return (
+                      <option key={isoDate} value={isoDate}>
+                        {date.toDateString()}
+                      </option>
+                    );
+                  })}
+                </select>
+
+                <select
+                  value={selectedPaymentStatus}
+                  onChange={(e) => setSelectedPaymentStatus(e.target.value)}
+                  className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 focus:outline-none"
+                >
+                  <option value="">Payment</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Failed">Failed</option>
+                  <option value="Authorized">Authorized</option>
+                  <option value="refund">Refunded</option>
+                </select>
+              </>
+            )}
           </div>
 
-          {/* Show All Submissions Modal */}
-          <Modal show={showListModal} onClose={() => setShowListModal(false)}>
-            <div className="flex justify-between mb-4">
-              <h2 className="text-xl font-bold mb-4">
-                {forms.find((f) => f._id === selectedFormId)?.formName ||
-                  "selected form"}
-              </h2>
-            </div>
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-4 justify-center">
+            <button
+              onClick={() => setShowListModal(true)}
+              disabled={!selectedFormId}
+              className={`px-5 py-2 rounded-md text-white font-semibold transition ${
+                selectedFormId
+                  ? "bg-indigo-600 hover:bg-indigo-700"
+                  : "bg-indigo-300 cursor-not-allowed"
+              }`}
+            >
+              Show Submissions
+            </button>
 
-            <table className="min-w-full border border-gray-300">
-              <thead>
-                <tr className="bg-gray-200 text-left">
-                  <th className="p-2 border">Submission Date</th>
-                  <th className="p-2 border">Candidate</th>
-                  <th className="p-2 border">BNRC Registration</th>
-                  <th className="p-2 border">Payment Status</th>
-                  <th className="p-2 border">Amount</th>
-                  <th className="p-2 border">Files</th>
-                  <th className="p-2 border">Action</th>
-                  <th className="p-2 border">Verification</th>
-                </tr>
-              </thead>
-              <tbody>
-                {!selectedFormId ? (
-                  <tr>
-                    <td colSpan="4" className="text-center p-4 text-gray-500">
-                      Please select a form to view submissions.
-                    </td>
-                  </tr>
-                ) : filteredSubmissions.length === 0 ? (
-                  <tr>
-                    <td colSpan="4" className="text-center p-4 text-gray-500">
-                      No submissions found for this form.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredSubmissions.map((submission) => (
-                    <tr key={submission._id} className="hover:bg-gray-50">
-                      <td className="p-2 border">
-                        {submission.createdAt
-                          ? new Date(submission.createdAt).toLocaleString()
-                          : "N/A"}
-                      </td>
+            <button
+              onClick={() =>
+                downloadSubmissionExcel(
+                  selectedFormId,
+                  selectedExamDate,
+                  selectedPaymentStatus
+                )
+              }
+              disabled={!selectedFormId}
+              className={`px-5 py-2 rounded-md font-semibold transition ${
+                selectedFormId
+                  ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                  : "bg-emerald-200 text-emerald-100 cursor-not-allowed"
+              }`}
+            >
+              Download Excel
+            </button>
 
-                      <td className="p-2 border">
-                        {(() => {
-                          {
-                            /* const formFields = submission.form?.fields || []; */
-                          }
-                          const formFields =
-                            submission.form?.sections?.flatMap(
-                              (section) => section.fields
-                            ) || [];
-                          const candidateField = formFields.find(
-                            (f) =>
-                              f.label.toLowerCase().includes("name") ||
-                              f.name.toLowerCase().includes("name")
-                          );
-                          const candidateKey = candidateField?.name;
-                          return candidateKey
-                            ? submission.responses?.[candidateKey] || "N/A"
-                            : "N/A";
-                        })()}
-                      </td>
-
-                      <td className="p-2 border">
-                        {(() => {
-                          const formFields =
-                            submission.form?.sections?.flatMap(
-                              (section) => section.fields
-                            ) || [];
-                          const bnrcField = formFields.find(
-                            (f) =>
-                              f.label.toLowerCase().includes("bnrc") ||
-                              f.name.toLowerCase().includes("bnrc")
-                          );
-                          const bnrcKey = bnrcField?.name;
-                          return bnrcKey
-                            ? submission.responses?.[bnrcKey] || "N/A"
-                            : "N/A";
-                        })()}
-                      </td>
-                      <td className="p-2 border">
-                        {submission.paymentStatus || "N/A"}
-                      </td>
-                      <td className="p-2 border">
-                        {submission.form?.paymentDetails?.amount
-                          ? `₹${submission.form.paymentDetails.amount.toLocaleString(
-                              "en-IN"
-                            )}`
-                          : "N/A"}
-                      </td>
-                      {/* <td className="p-2 border">{submission._id}</td> */}
-                      <td className="p-2 border">
-                        {submission.uploadedFiles?.length > 0
-                          ? `${submission.uploadedFiles.length} files`
-                          : "No File"}
-                      </td>
-
-                      <td className="p-2 border">
-                        <button
-                          onClick={() => {
-                            setSelectedSubmission(submission);
-                            setShowDetailModal(true);
-                          }}
-                          className="py-1 px-4 bg-green-500 text-white cursor-pointer rounded-lg shadow-lg hover:bg-green-600"
-                        >
-                          View
-                        </button>
-                      </td>
-                      <td className="p-2 border">
-                        <button
-                          className={`py-1 px-4 rounded-lg cursor-pointer shadow-lg ${
-                            submission.verified
-                              ? "bg-green-600 cursor-not-allowed opacity-70"
-                              : "bg-red-600"
-                          } text-white`}
-                          onClick={() =>
-                            handleVerificationToggle(
-                              submission._id,
-                              submission.verified
-                            )
-                          }
-                          disabled={submission.verified} // disable if verified
-                        >
-                          {submission.verified ? "Verified" : "Not Verified"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </Modal>
-
-          {/* Detail Modal (Single Submission) */}
-          <Modal
-            show={showDetailModal}
-            onClose={() => {
-              setShowDetailModal(false);
-              setSelectedSubmission(null);
-            }}
-            data={selectedSubmission}
-          >
-            {selectedSubmission ? (
-              <div className="p-4">
-                <h2 className="text-xl font-bold mb-4">Submission Details</h2>
-                <p>
-                  <strong>ID:</strong> {selectedSubmission._id}
-                </p>
-                <p>
-                  <strong>Candidate Name:</strong>{" "}
-                  {selectedSubmission.responses?.candidateName || "N/A"}
-                </p>
-                <p>
-                  <strong>Files:</strong>{" "}
-                  {selectedSubmission.uploadedFiles?.length > 0
-                    ? selectedSubmission.uploadedFiles
-                        .map((file) => file.originalName)
-                        .join(", ")
-                    : "No File"}
-                </p>
-              </div>
-            ) : (
-              <p>No submission selected.</p>
-            )}
-          </Modal>
+            <button
+              onClick={handleLogout}
+              className="px-5 py-2 rounded-md text-white font-semibold bg-red-600 hover:bg-red-700 transition"
+            >
+              Logout
+            </button>
+          </div>
         </div>
+
+        <Modal show={showListModal} onClose={() => setShowListModal(false)}>
+          <h2 className="text-xl font-bold mb-4">
+            {forms.find((f) => f._id === selectedFormId)?.formName ||
+              "selected form"}
+          </h2>
+          <table className="min-w-full border border-gray-300">
+            <thead>
+              <tr className="bg-gray-200 text-left">
+                <th className="p-2 border">Sr. no.</th>
+                <th className="p-2 border">Submission Date</th>
+                <th className="p-2 border">Candidate</th>
+                <th className="p-2 border">BNRC Registration</th>
+                <th className="p-2 border">Payment Status</th>
+                <th className="p-2 border">Amount</th>
+                <th className="p-2 border">Files</th>
+                <th className="p-2 border">Action</th>
+                <th className="p-2 border">Verification</th>
+              </tr>
+            </thead>
+            <tbody>
+              {!selectedFormId ? (
+                <tr>
+                  <td colSpan="8" className="text-center p-4 text-gray-500">
+                    Please select a form to view submissions.
+                  </td>
+                </tr>
+              ) : filteredSubmissions.length === 0 ? (
+                <tr>
+                  <td colSpan="8" className="text-center p-4 text-gray-500">
+                    No submissions found for this form.
+                  </td>
+                </tr>
+              ) : (
+                paginatedSubmissions.map((submission, index) => (
+                  <tr key={submission._id} className="hover:bg-gray-50">
+                    <td className="p-2 border">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
+                    <td className="p-2 border">
+                      {submission.createdAt
+                        ? new Date(submission.createdAt).toLocaleString()
+                        : "N/A"}
+                    </td>
+                    <td className="p-2 border">
+                      {(() => {
+                        const formFields =
+                          submission.form?.sections?.flatMap(
+                            (section) => section.fields
+                          ) || [];
+                        const candidateField = formFields.find(
+                          (f) =>
+                            f.label.toLowerCase().includes("name") ||
+                            f.name.toLowerCase().includes("name")
+                        );
+                        const candidateKey = candidateField?.name;
+                        return candidateKey
+                          ? submission.responses?.[candidateKey] || "N/A"
+                          : "N/A";
+                      })()}
+                    </td>
+                    <td className="p-2 border">
+                      {(() => {
+                        const formFields =
+                          submission.form?.sections?.flatMap(
+                            (section) => section.fields
+                          ) || [];
+                        const bnrcField = formFields.find(
+                          (f) =>
+                            f.label.toLowerCase().includes("bnrc") ||
+                            f.name.toLowerCase().includes("bnrc")
+                        );
+                        const bnrcKey = bnrcField?.name;
+                        return bnrcKey
+                          ? submission.responses?.[bnrcKey] || "N/A"
+                          : "N/A";
+                      })()}
+                    </td>
+                    <td className="p-2 border">
+                      {submission.paymentStatus || "N/A"}
+                    </td>
+                    <td className="p-2 border">
+                      {submission.form?.paymentDetails?.amount
+                        ? `₹${submission.form.paymentDetails.amount.toLocaleString(
+                            "en-IN"
+                          )}`
+                        : "N/A"}
+                    </td>
+                    <td className="p-2 border">
+                      {submission.uploadedFiles?.length > 0
+                        ? `${submission.uploadedFiles.length} files`
+                        : "No File"}
+                    </td>
+                    <td className="p-2 border">
+                      <button
+                        onClick={() => {
+                          setSelectedSubmission(submission);
+                          setShowDetailModal(true);
+                        }}
+                        className="py-1 px-4 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600"
+                      >
+                        View
+                      </button>
+                    </td>
+                    <td className="p-2 border">
+                      <button
+                        className={`py-1 px-4 rounded-lg cursor-pointer shadow-lg ${
+                          submission.verified
+                            ? "bg-green-600 cursor-not-allowed opacity-70"
+                            : "bg-red-600"
+                        } text-white`}
+                        onClick={() =>
+                          handleVerificationToggle(
+                            submission._id,
+                            submission.verified
+                          )
+                        }
+                        disabled={submission.verified} // disable if verified
+                      >
+                        {submission.verified ? "Verified" : "Not Verified"}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+
+          {selectedFormId && filteredSubmissions.length > itemsPerPage && (
+            <div className="flex justify-between items-center mt-4">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => prev - 1)}
+                className="px-3 py-1 bg-gray-300 text-sm rounded disabled:opacity-50"
+              >
+                Prev
+              </button>
+              <span className="text-sm">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+                className="px-3 py-1 bg-gray-300 text-sm rounded disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </Modal>
+
+        {/* Detail Modal (Single Submission) */}
+        <Modal
+          show={showDetailModal}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedSubmission(null);
+          }}
+          data={selectedSubmission}
+        >
+          {selectedSubmission ? (
+            <div className="p-4">
+              <h2 className="text-xl font-bold mb-4">Submission Details</h2>
+              <p>
+                <strong>ID:</strong> {selectedSubmission._id}
+              </p>
+              <p>
+                <strong>Candidate Name:</strong>{" "}
+                {selectedSubmission.responses?.candidateName || "N/A"}
+              </p>
+              <p>
+                <strong>Files:</strong>{" "}
+                {selectedSubmission.uploadedFiles?.length > 0
+                  ? selectedSubmission.uploadedFiles
+                      .map((file) => file.originalName)
+                      .join(", ")
+                  : "No File"}
+              </p>
+            </div>
+          ) : (
+            <p>No submission selected.</p>
+          )}
+        </Modal>
       </div>
     </div>
   );

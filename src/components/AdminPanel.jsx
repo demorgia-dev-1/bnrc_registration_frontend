@@ -168,40 +168,36 @@ export const AdminPanel = () => {
   const [examFilteredSubmissions, setExamFilteredSubmissions] = useState([]);
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState("");
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 25;
+
   const navigate = useNavigate();
 
-const staticExamDates = (() => {
-  const allowedDays = [1, 2, 5, 6]; // Mon, Tue, Fri, Sat
-  const start = new Date("2025-06-01");
-  const end = new Date("2025-07-31");
-  const todayStr = new Date().toISOString().split("T")[0];
-  const result = [];
+  const staticExamDates = (() => {
+    const allowedDays = [1, 2, 5, 6]; // Mon, Tue, Fri, Sat
+    const start = new Date("2025-06-01");
+    const end = new Date("2025-07-31");
+    const todayStr = new Date().toISOString().split("T")[0];
+    const result = [];
 
-  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    const dateStr = d.toISOString().split("T")[0];
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split("T")[0];
 
-    if (
-      dateStr === "2025-06-13" ||
-      (dateStr >= "2025-06-25" && dateStr <= "2025-07-03")
-      // ⛔ Removed: || dateStr === todayStr
-    ) {
-      continue;
+      if (
+        dateStr === "2025-06-13" ||
+        (dateStr >= "2025-06-25" && dateStr <= "2025-07-03")
+        // ⛔ Removed: || dateStr === todayStr
+      ) {
+        continue;
+      }
+
+      if (allowedDays.includes(d.getDay())) {
+        result.push(new Date(d));
+      }
     }
 
-    if (allowedDays.includes(d.getDay())) {
-      result.push(new Date(d));
-    }
-  }
-
-  return result;
-})();
-
-  // const filteredSubmissions = submissions.filter(
-  //   (submission) =>
-  //     submission.form?._id === selectedFormId &&
-  //     (!selectedExamDate ||
-  //       submission.responses?.exam_date_selection === selectedExamDate)
-  // );
+    return result;
+  })();
 
   const filteredSubmissions = submissions.filter((submission) => {
     const matchesForm = submission.form?._id === selectedFormId;
@@ -214,6 +210,12 @@ const staticExamDates = (() => {
 
     return matchesForm && matchesDate && matchesPayment;
   });
+
+  const totalPages = Math.ceil(filteredSubmissions.length / itemsPerPage);
+  const paginatedSubmissions = filteredSubmissions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   useEffect(() => {
     if (!selectedFormId) return;
@@ -355,38 +357,39 @@ const staticExamDates = (() => {
     }
   };
 
-const downloadSubmissionExcel = async (formId, examDate, paymentStatus) => {
-  try {
-    const token = sessionStorage.getItem("token");
+  const downloadSubmissionExcel = async (formId, examDate, paymentStatus) => {
+    try {
+      const token = sessionStorage.getItem("token");
 
-    const url = new URL(`${API_BASE_URL}/api/download/submissions-excel`);
-    url.searchParams.append("formId", formId);
-    if (examDate) url.searchParams.append("examDate", examDate);
-    if (paymentStatus) url.searchParams.append("paymentStatus", paymentStatus); // ✅ ADD THIS LINE
+      const url = new URL(`${API_BASE_URL}/api/download/submissions-excel`);
+      url.searchParams.append("formId", formId);
+      if (examDate) url.searchParams.append("examDate", examDate);
+      if (paymentStatus)
+        url.searchParams.append("paymentStatus", paymentStatus); // ✅ ADD THIS LINE
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    if (!response.ok) throw new Error("Failed to download Excel");
+      if (!response.ok) throw new Error("Failed to download Excel");
 
-    const blob = await response.blob();
-    const blobUrl = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = blobUrl;
-    a.download = `submissions-${formId}${
-      examDate ? `-${examDate}` : ""
-    }${paymentStatus ? `-${paymentStatus}` : ""}.xlsx`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(blobUrl);
-  } catch (error) {
-    console.error("Download error:", error);
-    alert("Failed to download submissions.");
-  }
-};
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `submissions-${formId}${examDate ? `-${examDate}` : ""}${
+        paymentStatus ? `-${paymentStatus}` : ""
+      }.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download error:", error);
+      alert("Failed to download submissions.");
+    }
+  };
 
   const handleEditForm = async () => {
     if (!formIdInput) {
@@ -640,252 +643,13 @@ const downloadSubmissionExcel = async (formId, examDate, paymentStatus) => {
   ];
 
   return (
-    <div className="relative min-h-screen">
-      <img
-        src="/background.jpg"
-        alt="Background"
-        className="w-full h-full object-cover absolute inset-0"
-      />
-      <div className="absolute top-0 right-0 h-full w-1/2 flex flex-col items-center justify-center z-10">
-        <div className="mt-5 p-5 rounded-lg w-full max-w-lg flex flex-wrap justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-4">
-            <select
-              id="formSelect"
-              value={selectedFormId}
-              onChange={(e) => setSelectedFormId(e.target.value)}
-              className="py-2 px-3 rounded-md bg-blue-700 text-white cursor-pointer focus:outline-none hover:bg-blue-800"
-            >
-              <option value="" className="text-gray-700">
-                Select a form
-              </option>
-              {forms.map((form) => (
-                <option
-                  key={form._id}
-                  value={form._id}
-                  className="text-gray-700"
-                >
-                  {form.formName}
-                </option>
-              ))}
-            </select>
+    <div className="relative min-h-screen w-full items-center bg-gradient-to-br from-sky-300 via-white to-indigo-400 transition-all duration-500">
+      <div className="absolute h-full w-full px-10 flex  m-4 items-center gap-5 flex justify-between  z-10">
+        {/*  create form */}
 
-            {selectedFormId && submissions.length > 0 && (
-              <>
-                <select
-                  id="dateFilter"
-                  value={selectedExamDate}
-                  onChange={(e) => setSelectedExamDate(e.target.value)}
-                  className="py-2 px-3 rounded-md bg-blue-700 text-white cursor-pointer focus:outline-none hover:bg-blue-800"
-                >
-                  <option value="">Select Exam Date</option>
-                  {staticExamDates.map((date) => {
-                    const isoDate = date.toISOString().split("T")[0]; // e.g., "2025-06-16"
-                    return (
-                      <option key={isoDate} value={isoDate}>
-                        {date.toDateString()} {/* e.g., "Mon Jun 16 2025" */}
-                      </option>
-                    );
-                  })}
-                </select>
-
-                <select
-                  id="paymentFilter"
-                  value={selectedPaymentStatus}
-                  onChange={(e) => setSelectedPaymentStatus(e.target.value)}
-                  className="py-2 px-3 rounded-md bg-blue-700 text-white cursor-pointer focus:outline-none hover:bg-blue-800"
-                >
-                  <option value="">All Payments</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Pending">Pending</option>
-                </select>
-              </>
-            )}
-          </div>
-
-          {/* Show All Submissions Modal */}
-          <button
-            onClick={() => setShowListModal(true)}
-            className="py-1 px-4 bg-blue-700 text-white rounded-lg shadow-xl hover:bg-blue-800 cursor-pointer"
-          >
-            Show Submissions
-          </button>
-
-          <Modal show={showListModal} onClose={() => setShowListModal(false)}>
-            <h2 className="text-xl font-bold mb-4">
-              {forms.find((f) => f._id === selectedFormId)?.formName ||
-                "selected form"}
-            </h2>
-            <table className="min-w-full border border-gray-300">
-              <thead>
-                <tr className="bg-gray-200 text-left">
-                  <th className="p-2 border">Submission Date</th>
-
-                  <th className="p-2 border">Candidate</th>
-                  <th className="p-2 border">BNRC Registration</th>
-                  <th className="p-2 border">Payment Status</th>
-                  <th className="p-2 border">Amount</th>
-                  {/* <th className="p-2 border">Submission ID</th> */}
-                  <th className="p-2 border">Files</th>
-                  <th className="p-2 border">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {!selectedFormId ? (
-                  <tr>
-                    <td colSpan="4" className="text-center p-4 text-gray-500">
-                      Please select a form to view submissions.
-                    </td>
-                  </tr>
-                ) : filteredSubmissions.length === 0 ? (
-                  <tr>
-                    <td colSpan="4" className="text-center p-4 text-gray-500">
-                      No submissions found for this form.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredSubmissions.map((submission) => (
-                    <tr key={submission._id} className="hover:bg-gray-50">
-                      <td className="p-2 border">
-                        {submission.createdAt
-                          ? new Date(submission.createdAt).toLocaleString()
-                          : "N/A"}
-                      </td>
-
-                      <td className="p-2 border">
-                        {(() => {
-                          {
-                            /* const formFields = submission.form?.fields || []; */
-                          }
-                          const formFields =
-                            submission.form?.sections?.flatMap(
-                              (section) => section.fields
-                            ) || [];
-                          const candidateField = formFields.find(
-                            (f) =>
-                              f.label.toLowerCase().includes("name") ||
-                              f.name.toLowerCase().includes("name")
-                          );
-                          const candidateKey = candidateField?.name;
-                          return candidateKey
-                            ? submission.responses?.[candidateKey] || "N/A"
-                            : "N/A";
-                        })()}
-                      </td>
-                      <td className="p-2 border">
-                        {(() => {
-                          const formFields =
-                            submission.form?.sections?.flatMap(
-                              (section) => section.fields
-                            ) || [];
-                          const bnrcField = formFields.find(
-                            (f) =>
-                              f.label.toLowerCase().includes("bnrc") ||
-                              f.name.toLowerCase().includes("bnrc")
-                          );
-                          const bnrcKey = bnrcField?.name;
-                          return bnrcKey
-                            ? submission.responses?.[bnrcKey] || "N/A"
-                            : "N/A";
-                        })()}
-                      </td>
-                      
-                      <td className="p-2 border">
-                        {submission.paymentStatus || "N/A"}
-                      </td>
-                      <td className="p-2 border">
-                        {submission.form?.paymentDetails?.amount
-                          ? `₹${submission.form.paymentDetails.amount.toLocaleString("en-IN")}`
-                          : "N/A"}
-                      </td>
-                      {/* <td className="p-2 border">{submission._id}</td> */}
-                      <td className="p-2 border">
-                        {submission.uploadedFiles?.length > 0
-                          ? `${submission.uploadedFiles.length} files`
-                          : "No File"}
-                      </td>
-
-                      <td className="p-2 border">
-                        <button
-                          onClick={() => {
-                            setSelectedSubmission(submission);
-                            setShowDetailModal(true);
-                          }}
-                          className="py-1 px-4 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600"
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </Modal>
-
-          {/* Detail Modal (Single Submission) */}
-          <Modal
-            show={showDetailModal}
-            onClose={() => {
-              setShowDetailModal(false);
-              setSelectedSubmission(null);
-            }}
-            data={selectedSubmission}
-          />
-
-          <button
-            onClick={downloadFormExcel}
-            className="py-2 px-4 bg-blue-700 text-white rounded-lg shadow-xl hover:bg-blue-800 cursor-pointer"
-          >
-            Download Forms
-          </button>
-
-          <button
-            onClick={() =>
-                  downloadSubmissionExcel(selectedFormId, selectedExamDate, selectedPaymentStatus )
-                }
-            className="py-2 px-4 bg-blue-700 text-white rounded-lg shadow-xl hover:bg-blue-800 cursor-pointer"
-          >
-            Download Submissions Excel
-          </button>
-          <button
-            onClick={() => setIsCreateResult(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Create Result
-          </button>
-          {iscreateResult && (
-            <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
-              <div className="bg-white rounded-lg shadow-xl w-auto max-h-[90vh] overflow-y-auto p-6">
-                <button
-                  onClick={() => setIsCreateResult(false)}
-                  className="text-red-600 text-2xl font-bold cursor-pointer right-4"
-                >
-                  ×
-                </button>
-                <h2 className="text-2xl font-semibold mb-4 text-center">
-                  Create Result
-                </h2>
-                <CreateResult />
-              </div>
-            </div>
-          )}
-          <button
-            onClick={() => window.open("/results", "_blank")}
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-          >
-            Show Results
-          </button>
-          <button
-            onClick={handleLogout}
-            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-          >
-            Logout
-          </button>
-        </div>
-        {/* <CreateResult />  */}
         <form
           onSubmit={handleSubmit}
-          className="mt-10 bg-white bg-opacity-95 p-10 rounded-l-lg shadow-lg w-full max-w-lg max-h-[80vh] overflow-y-auto"
+          className="mt-10 bg-white bg-opacity-95 p-10 rounded-lg shadow-xl w-1/2  max-h-[80vh] overflow-y-auto"
           style={{ scrollbarWidth: "thin", scrollbarColor: "#ccc #f0f0f0" }}
         >
           <h2 className="text-2xl font-bold mb-6 text-center">Create Form</h2>
@@ -1262,39 +1026,301 @@ const downloadSubmissionExcel = async (formId, examDate, paymentStatus) => {
           </div>
         )}
 
-        <div
-          className="mt-10 mb-10 bg-white bg-opacity-95 p-10 rounded-l-lg shadow-lg w-full max-w-lg max-h-[80vh] overflow-y-auto"
-          style={{ scrollbarWidth: "thin", scrollbarColor: "#ccc #f0f0f0" }}
-        >
-          <h2 className="text-xl font-bold mb-2 text-center">
-            Extend Form Expiry
+        {/* all submissions list modal */}
+        <Modal show={showListModal} onClose={() => setShowListModal(false)}>
+          <h2 className="text-xl font-bold mb-4">
+            {forms.find((f) => f._id === selectedFormId)?.formName ||
+              "selected form"}
           </h2>
-          <div className="flex items-center mb-4 ">
-            <input
-              type="text"
-              placeholder="Enter Form ID"
-              className="border p-2 mr-2 w-1/2"
-              onChange={(e) =>
-                setCreatedForm({ ...createdForm, _id: e.target.value })
+          <table className="min-w-full border border-gray-300">
+            <thead>
+              <tr className="bg-gray-200 text-left">
+                <th className="p-2 border">Sr. no.</th>
+                <th className="p-2 border">Submission Date</th>
+                <th className="p-2 border">Submission ID</th>
+                <th className="p-2 border">Candidate</th>
+                <th className="p-2 border">BNRC Registration</th>
+                <th className="p-2 border">Payment Status</th>
+                <th className="p-2 border">Amount</th>
+                <th className="p-2 border">Files</th>
+                <th className="p-2 border">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {!selectedFormId ? (
+                <tr>
+                  <td colSpan="8" className="text-center p-4 text-gray-500">
+                    Please select a form to view submissions.
+                  </td>
+                </tr>
+              ) : filteredSubmissions.length === 0 ? (
+                <tr>
+                  <td colSpan="8" className="text-center p-4 text-gray-500">
+                    No submissions found for this form.
+                  </td>
+                </tr>
+              ) : (
+                paginatedSubmissions.map((submission, index) => (
+                  <tr key={submission._id} className="hover:bg-gray-50">
+                    <td className="p-2 border">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
+                    <td className="p-2 border">
+                      {submission.createdAt
+                        ? new Date(submission.createdAt).toLocaleString()
+                        : "N/A"}
+                    </td>
+                    <td className="p-2 border">{submission._id}</td>
+                    <td className="p-2 border">
+                      {(() => {
+                        const formFields =
+                          submission.form?.sections?.flatMap(
+                            (section) => section.fields
+                          ) || [];
+                        const candidateField = formFields.find(
+                          (f) =>
+                            f.label.toLowerCase().includes("name") ||
+                            f.name.toLowerCase().includes("name")
+                        );
+                        const candidateKey = candidateField?.name;
+                        return candidateKey
+                          ? submission.responses?.[candidateKey] || "N/A"
+                          : "N/A";
+                      })()}
+                    </td>
+                    <td className="p-2 border">
+                      {(() => {
+                        const formFields =
+                          submission.form?.sections?.flatMap(
+                            (section) => section.fields
+                          ) || [];
+                        const bnrcField = formFields.find(
+                          (f) =>
+                            f.label.toLowerCase().includes("bnrc") ||
+                            f.name.toLowerCase().includes("bnrc")
+                        );
+                        const bnrcKey = bnrcField?.name;
+                        return bnrcKey
+                          ? submission.responses?.[bnrcKey] || "N/A"
+                          : "N/A";
+                      })()}
+                    </td>
+                    <td className="p-2 border">
+                      {submission.paymentStatus || "N/A"}
+                    </td>
+                    <td className="p-2 border">
+                      {submission.form?.paymentDetails?.amount
+                        ? `₹${submission.form.paymentDetails.amount.toLocaleString(
+                            "en-IN"
+                          )}`
+                        : "N/A"}
+                    </td>
+                    <td className="p-2 border">
+                      {submission.uploadedFiles?.length > 0
+                        ? `${submission.uploadedFiles.length} files`
+                        : "No File"}
+                    </td>
+                    <td className="p-2 border">
+                      <button
+                        onClick={() => {
+                          setSelectedSubmission(submission);
+                          setShowDetailModal(true);
+                        }}
+                        className="py-1 px-4 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600"
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+
+          {selectedFormId && filteredSubmissions.length > itemsPerPage && (
+            <div className="flex justify-between items-center mt-4">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => prev - 1)}
+                className="px-3 py-1 bg-gray-300 text-sm rounded disabled:opacity-50"
+              >
+                Prev
+              </button>
+              <span className="text-sm">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+                className="px-3 py-1 bg-gray-300 text-sm rounded disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </Modal>
+
+        {/* Detail Modal (Single Submission) */}
+        <Modal
+          show={showDetailModal}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedSubmission(null);
+          }}
+          data={selectedSubmission}
+        />
+
+        {/* extend form expiry date and show submissions*/}
+        <div className="p-5 rounded-lg shadow-xl bg-white w-1/2 mt-10 h-[80vh] items-center justify-center flex flex-col">
+          <div className="mt-5 p-5 rounded-lg w-full max-w-lg flex flex-wrap justify-between gap-2 bg-blue-200 shadow-xl">
+            <div className="flex flex-wrap items-center gap-4 ">
+              <select
+                id="formSelect"
+                value={selectedFormId}
+                onChange={(e) => setSelectedFormId(e.target.value)}
+                className="py-2 px-3 rounded-md bg-blue-700 text-white cursor-pointer focus:outline-none hover:bg-blue-800"
+              >
+                <option value="" className="text-white">
+                  Select a form
+                </option>
+                {forms.map((form) => (
+                  <option
+                    key={form._id}
+                    value={form._id}
+                    className="text-white"
+                  >
+                    {form.formName}
+                  </option>
+                ))}
+              </select>
+
+              {selectedFormId && submissions.length > 0 && (
+                <>
+                  <select
+                    id="dateFilter"
+                    value={selectedExamDate}
+                    onChange={(e) => setSelectedExamDate(e.target.value)}
+                    className="py-2 px-3 rounded-md bg-blue-700 text-white cursor-pointer focus:outline-none hover:bg-blue-800"
+                  >
+                    <option value="">Select Exam Date</option>
+                    {staticExamDates.map((date) => {
+                      const isoDate = date.toISOString().split("T")[0];
+                      return (
+                        <option key={isoDate} value={isoDate}>
+                          {date.toDateString()}
+                        </option>
+                      );
+                    })}
+                  </select>
+
+                  <select
+                    id="paymentFilter"
+                    value={selectedPaymentStatus}
+                    onChange={(e) => setSelectedPaymentStatus(e.target.value)}
+                    className="py-2 px-3 rounded-md bg-blue-700 text-white cursor-pointer focus:outline-none hover:bg-blue-800"
+                  >
+                    <option value="">All Payments</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Pending">Pending</option>
+                  </select>
+                </>
+              )}
+            </div>
+
+            {/* Show All Submissions Modal */}
+            <button
+              onClick={() => setShowListModal(true)}
+              className="py-1 px-4 bg-blue-700 text-white rounded-lg shadow-xl hover:bg-blue-800 cursor-pointer"
+            >
+              Show Submissions
+            </button>
+
+            <button
+              onClick={downloadFormExcel}
+              className="py-2 px-4 bg-blue-700 text-white rounded-lg shadow-xl hover:bg-blue-800 cursor-pointer"
+            >
+              Download Forms
+            </button>
+
+            <button
+              onClick={() =>
+                downloadSubmissionExcel(
+                  selectedFormId,
+                  selectedExamDate,
+                  selectedPaymentStatus
+                )
               }
-            />
-            <input
-              type="date"
-              value={extendDate}
-              onChange={(e) => setExtendDate(e.target.value)}
-              className="border p-2 mr-2 w-1/2"
-            />
+              className="py-2 px-4 bg-blue-700 text-white rounded-lg shadow-xl hover:bg-blue-800 cursor-pointer"
+            >
+              Download Submissions Excel
+            </button>
+            <button
+              onClick={() => setIsCreateResult(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Create Result
+            </button>
+            {iscreateResult && (
+              <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
+                <div className="bg-white rounded-lg shadow-xl w-auto max-h-[90vh] overflow-y-auto p-6">
+                  <button
+                    onClick={() => setIsCreateResult(false)}
+                    className="text-red-600 text-2xl font-bold cursor-pointer right-4"
+                  >
+                    ×
+                  </button>
+                  <h2 className="text-2xl font-semibold mb-4 text-center">
+                    Create Result
+                  </h2>
+                  <CreateResult />
+                </div>
+              </div>
+            )}
+            <button
+              onClick={() => window.open("/results", "_blank")}
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+            >
+              Show Results
+            </button>
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            >
+              Logout
+            </button>
           </div>
-          <button
-            onClick={() => extendEndDate(createdForm?._id, extendDate)}
-            className="bg-green-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-green-700"
+          <div
+            className="mt-10 mb-10  bg-blue-200 bg-opacity-95 p-10 rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] overflow-y-auto"
+            style={{ scrollbarWidth: "thin", scrollbarColor: "#ccc #f0f0f0" }}
           >
-            Extend
-          </button>
+            <h2 className="text-xl font-bold mb-2 text-center">
+              Extend Form Expiry
+            </h2>
+            <div className="flex items-center mb-4 ">
+              <input
+                type="text"
+                placeholder="Enter Form ID"
+                className="border p-2 mr-2 w-1/2"
+                onChange={(e) =>
+                  setCreatedForm({ ...createdForm, _id: e.target.value })
+                }
+              />
+              <input
+                type="date"
+                value={extendDate}
+                onChange={(e) => setExtendDate(e.target.value)}
+                className="border p-2 mr-2 w-1/2"
+              />
+            </div>
+            <button
+              onClick={() => extendEndDate(createdForm?._id, extendDate)}
+              className="bg-green-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-green-700"
+            >
+              Extend
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 };
-
-// export default AdminPanel;

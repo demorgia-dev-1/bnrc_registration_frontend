@@ -74,33 +74,68 @@ const ThankYou = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white text-center p-6">
-      <h1 className="text-4xl font-bold mb-6 text-green-600">Thank You!</h1>
-
       {isVerifying ? (
-        <p className="text-lg mb-6 text-gray-700">
-          Verifying your payment, please wait...
-        </p>
-      ) : isPaymentRequired ? (
-        <p className="text-lg mb-6">
-          Your payment was{" "}
-          <strong>{paymentVerified ? "successful" : "unsuccessful"}</strong> and
-          your <strong>{formName || "form"}</strong> form has been received.
-        </p>
+        <div className="flex flex-col items-center text-lg mb-6 text-gray-700">
+          <svg
+            className="animate-spin h-8 w-8 text-blue-500 mb-3"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            ></path>
+          </svg>
+          <p className="text-center font-bold">
+            Processing your payment, please wait a moment...
+          </p>
+        </div>
       ) : (
-        <p className="text-lg mb-6">
-          Your <strong>{formName || "form"}</strong> form has been successfully
-          submitted.
-        </p>
+        <>
+          {isPaymentRequired ? (
+            <>
+              <h1 className="text-4xl font-bold mb-6 text-green-600">
+                Thank You!
+              </h1>
+              <p className="text-lg mb-6">
+                Your payment was{" "}
+                <strong>
+                  {paymentVerified ? "successful" : "unsuccessful"}
+                </strong>{" "}
+                and your <strong>{formName || "form"}</strong> form has been
+                received.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-4xl font-bold mb-6 text-green-600">
+                Thank You!
+              </h1>
+              <p className="text-lg mb-6">
+                Your <strong>{formName || "form"}</strong> form has been
+                successfully submitted.
+              </p>
+            </>
+          )}
+
+          <p className="text-gray-600 mb-1">
+            Your admit card has been mailed. Thank you for registering.
+          </p>
+          <p className="text-gray-600 mb-1">We wish you all the best.</p>
+          <p className="text-gray-600 mb-1">You can now close this window.</p>
+          <p className="text-gray-600 mb-8">Have a great day.</p>
+        </>
       )}
-      <p className="text-gray-600 mb-1">
-        Your admit card has been mailed. Thank you for registering.
-      </p>
-      <p className="text-gray-600 mb-1">
-        We wish you all the best.
-      </p>
-      
-      <p className="text-gray-600 mb-6">You can now close this window.</p>
-      <p className="text-gray-600 mb-8">Have a great day.</p>
     </div>
   );
 };
