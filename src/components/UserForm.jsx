@@ -1189,61 +1189,92 @@ const UserForm = ({ fields: initialFields }) => {
                                         },
                                       });
                                     }}
-                                    includeDates={(() => {
-                                      const allowedDays = [1, 2, 5, 6]; // Mon, Tue, Fri, Sat
-                                      const start = new Date("2025-06-01");
-                                      const end = new Date("2025-07-31");
-                                      {
-                                        /* const todayStr = new Date()
-                                        .toISOString()
-                                        .split("T")[0]; */
-                                      }
+includeDates={(() => {
+  const allowedDays = [1, 2, 5, 6]; // Mon, Tue, Fri, Sat
+  const start = new Date("2025-06-01");
+  const end = new Date("2025-08-31");
 
-                                      const tomorrow = new Date();
-                                      tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
 
-                                      const result = [];
+  const result = [];
 
-                                      for (
-                                        let d = new Date(start);
-                                        d <= end;
-                                        d.setDate(d.getDate() + 1)
-                                      ) {
-                                        const dateStr = d
-                                          .toISOString()
-                                          .split("T")[0];
+  const excludedAugustDates = new Set([
+    "2025-08-04",
+    "2025-08-09",
+    "2025-08-11",
+    "2025-08-15",
+    "2025-08-16",
+    "2025-08-18",
+    "2025-08-23",
+    "2025-08-25",
+    "2025-08-30"
+  ]);
 
-                                        if (
-                                          dateStr === "2025-06-13" ||
-                                          (dateStr >= "2025-06-25" &&
-                                            dateStr <= "2025-07-03") ||
-                                          d <= tomorrow
-                                        ) {
-                                          continue;
-                                        }
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const dateStr = d.toISOString().split("T")[0];
 
-                                        if (allowedDays.includes(d.getDay())) {
-                                          result.push(new Date(d));
-                                        }
-                                      }
-                                      // Manually include specific August dates
-                                      const extraAugustDates = [
-                                        "2025-08-01", // Friday
-                                        "2025-08-05", // Tuesday
-                                        "2025-08-08", // Friday
-                                        "2025-08-12", // Tuesday
-                                        "2025-08-13", // Wednesday
-                                        "2025-08-19", // Tuesday
-                                        "2025-08-22", // Friday
-                                        "2025-08-26", // Tuesday
-                                        "2025-08-29", // Friday
-                                      ];
+    if (
+      dateStr === "2025-06-13" ||
+      (dateStr >= "2025-06-25" && dateStr <= "2025-07-03") ||
+      d <= tomorrow
+    ) {
+      continue;
+    }
 
-                                      extraAugustDates.forEach((dateStr) => {
-                                        result.push(new Date(dateStr));
-                                      });
-                                      return result;
-                                    })()}
+    const dMonth = d.getMonth() + 1;
+
+    if (
+      (allowedDays.includes(d.getDay()) || dateStr === "2025-08-13") &&
+      !(dMonth === 8 && excludedAugustDates.has(dateStr))
+    ) {
+      result.push(new Date(d));
+    }
+  }
+
+  return result;
+})()}
+
+                                    // includeDates={(() => {
+                                    //   const allowedDays = [1, 2, 5, 6];
+                                    //   const start = new Date("2025-06-01");
+                                    //   const end = new Date("2025-08-31");
+                                    //   {
+                                    //     /* const todayStr = new Date()
+                                    //     .toISOString()
+                                    //     .split("T")[0]; */
+                                    //   }
+
+                                    //   const tomorrow = new Date();
+                                    //   tomorrow.setDate(tomorrow.getDate() + 1);
+
+                                    //   const result = [];
+
+                                    //   for (
+                                    //     let d = new Date(start);
+                                    //     d <= end;
+                                    //     d.setDate(d.getDate() + 1)
+                                    //   ) {
+                                    //     const dateStr = d
+                                    //       .toISOString()
+                                    //       .split("T")[0];
+
+                                    //     if (
+                                    //       dateStr === "2025-06-13" ||
+                                    //       (dateStr >= "2025-06-25" &&
+                                    //         dateStr <= "2025-07-03") ||
+                                    //       d <= tomorrow
+                                    //     ) {
+                                    //       continue;
+                                    //     }
+
+                                    //     if (allowedDays.includes(d.getDay())) {
+                                    //       result.push(new Date(d));
+                                    //     }
+                                    //   }
+                                      
+                                    //   return result;
+                                    // })()}
                                     minDate={new Date()}
                                     showMonthDropdown
                                     showYearDropdown

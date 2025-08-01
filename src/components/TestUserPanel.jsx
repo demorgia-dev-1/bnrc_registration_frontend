@@ -181,23 +181,23 @@ function TestUserPanel() {
       }
     }
 
-     // Add manually specified August dates
-  const extraAugustDates = [
-    "2025-08-01", // Friday
-    "2025-08-05", // Tuesday
-    "2025-08-08", // Friday
-    "2025-08-12", // Tuesday
-    "2025-08-13", // Wednesday
-    "2025-08-19", // Tuesday
-    "2025-08-22", // Friday
-    "2025-08-26", // Tuesday
-    "2025-08-29", // Friday
-  ];
+    // Add manually specified August dates
+    const extraAugustDates = [
+      "2025-08-01", // Friday
+      "2025-08-05", // Tuesday
+      "2025-08-08", // Friday
+      "2025-08-12", // Tuesday
+      "2025-08-13", // Wednesday
+      "2025-08-19", // Tuesday
+      "2025-08-22", // Friday
+      "2025-08-26", // Tuesday
+      "2025-08-29", // Friday
+    ];
 
-  extraAugustDates.forEach(dateStr => {
-    result.push(new Date(dateStr));
-  });
-  
+    extraAugustDates.forEach((dateStr) => {
+      result.push(new Date(dateStr));
+    });
+
     return result;
   })();
 
