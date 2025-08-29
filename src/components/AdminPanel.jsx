@@ -213,6 +213,22 @@ export const AdminPanel = () => {
       result.push(new Date(dateStr));
     });
 
+    const extraSeptemberDates = [
+    "2025-09-02", // Tuesday
+    "2025-09-04", // Thursday special
+    "2025-09-09", // Tuesday
+    "2025-09-12", // Friday
+    "2025-09-16", // Tuesday
+    "2025-09-19", // Friday
+    "2025-09-23", // Tuesday
+    "2025-09-26", // Friday
+    "2025-09-30", // Tuesday
+  ];
+
+  extraSeptemberDates.forEach((dateStr) => {
+    result.push(new Date(dateStr));
+  });
+
     return result;
   })();
 
