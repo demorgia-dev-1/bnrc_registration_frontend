@@ -1277,13 +1277,7 @@ const UserForm = ({ fields: initialFields }) => {
 
                                         // Include dates based on logic
                                         if (
-                                          day === 2 || // Tuesdays
-                                          day === 5 || // Fridays
-                                          (day === 4 && d.getDate() === 4) || // Specific condition for 4th
-                                          (day === 2 &&
-                                            [14, 17].includes(d.getDate())) || // Include 14th and 17th (Tuesdays)
-                                          (day === 5 &&
-                                            [29, 30].includes(d.getDate())) // Include 29th and 30th (Fridays)
+                                          [14, 17, 29, 30].includes(d.getDate())
                                         ) {
                                           result.push(new Date(d));
                                         }
