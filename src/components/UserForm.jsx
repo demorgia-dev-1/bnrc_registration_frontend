@@ -277,35 +277,40 @@ const UserForm = ({ fields: initialFields }) => {
       if (type === "date" && /exam/i.test(name)) {
         const selectedDate = new Date(value);
         const allowedDates = [
-          new Date("2025-06-13"),
-          new Date("2025-06-14"),
-          new Date("2025-06-16"),
-          new Date("2025-06-17"),
-          new Date("2025-06-20"),
-          new Date("2025-06-21"),
-          new Date("2025-06-23"),
-          new Date("2025-06-24"),
-          new Date("2025-06-27"),
-          new Date("2025-06-28"),
-          new Date("2025-06-30"),
-          new Date("2025-07-01"),
-          new Date("2025-07-04"),
-          new Date("2025-07-05"),
-          new Date("2025-07-07"),
-          new Date("2025-07-08"),
-          new Date("2025-07-11"),
-          new Date("2025-07-12"),
-          new Date("2025-07-14"),
-          new Date("2025-07-15"),
-          new Date("2025-07-18"),
-          new Date("2025-07-19"),
-          new Date("2025-07-21"),
-          new Date("2025-07-22"),
-          new Date("2025-07-25"),
-          new Date("2025-07-26"),
-          new Date("2025-07-28"),
-          new Date("2025-07-29"),
-          new Date("2025-07-12"),
+          // new Date("2025-06-13"),
+          // new Date("2025-06-14"),
+          // new Date("2025-06-16"),
+          // new Date("2025-06-17"),
+          // new Date("2025-06-20"),
+          // new Date("2025-06-21"),
+          // new Date("2025-06-23"),
+          // new Date("2025-06-24"),
+          // new Date("2025-06-27"),
+          // new Date("2025-06-28"),
+          // new Date("2025-06-30"),
+          // new Date("2025-07-01"),
+          // new Date("2025-07-04"),
+          // new Date("2025-07-05"),
+          // new Date("2025-07-07"),
+          // new Date("2025-07-08"),
+          // new Date("2025-07-11"),
+          // new Date("2025-07-12"),
+          // new Date("2025-07-14"),
+          // new Date("2025-07-15"),
+          // new Date("2025-07-18"),
+          // new Date("2025-07-19"),
+          // new Date("2025-07-21"),
+          // new Date("2025-07-22"),
+          // new Date("2025-07-25"),
+          // new Date("2025-07-26"),
+          // new Date("2025-07-28"),
+          // new Date("2025-07-29"),
+          // new Date("2025-07-12"),
+
+          new Date("2025-10-14"),
+          new Date("2025-10-17"),
+          new Date("2025-10-29"),
+          new Date("2025-10-30"),
         ];
 
         const isAllowed = allowedDates.some(
@@ -1251,8 +1256,8 @@ const UserForm = ({ fields: initialFields }) => {
                                       tomorrow.setDate(tomorrow.getDate() + 1);
 
                                       const result = [];
-                                      const start = new Date("2025-09-01");
-                                      const end = new Date("2025-09-30");
+                                      const start = new Date("2025-10-1");
+                                      const end = new Date("2025-10-31");
 
                                       for (
                                         let d = new Date(start);
@@ -1270,10 +1275,15 @@ const UserForm = ({ fields: initialFields }) => {
                                         // Skip 5th September
                                         if (dateStr === "2025-09-05") continue;
 
+                                        // Include dates based on logic
                                         if (
-                                          day === 2 ||
-                                          day === 5 ||
-                                          (day === 4 && d.getDate() === 4)
+                                          day === 2 || // Tuesdays
+                                          day === 5 || // Fridays
+                                          (day === 4 && d.getDate() === 4) || // Specific condition for 4th
+                                          (day === 2 &&
+                                            [14, 17].includes(d.getDate())) || // Include 14th and 17th (Tuesdays)
+                                          (day === 5 &&
+                                            [29, 30].includes(d.getDate())) // Include 29th and 30th (Fridays)
                                         ) {
                                           result.push(new Date(d));
                                         }
