@@ -307,10 +307,14 @@ const UserForm = ({ fields: initialFields }) => {
           // new Date("2025-07-29"),
           // new Date("2025-07-12"),
 
-          new Date("2025-10-14"),
-          new Date("2025-10-17"),
-          new Date("2025-10-29"),
-          new Date("2025-10-30"),
+          // new Date("2025-10-14"),
+          // new Date("2025-10-17"),
+          // new Date("2025-10-29"),
+          // new Date("2025-10-30"),
+          new Date("2025-11-18"),
+          new Date("2025-11-19"),
+          new Date("2025-11-25"),
+          new Date("2025-11-26"),
         ];
 
         const isAllowed = allowedDates.some(
@@ -1256,8 +1260,10 @@ const UserForm = ({ fields: initialFields }) => {
                                       tomorrow.setDate(tomorrow.getDate() + 1);
 
                                       const result = [];
-                                      const start = new Date("2025-10-1");
-                                      const end = new Date("2025-10-31");
+                                      // const start = new Date("2025-10-1");
+                                      // const end = new Date("2025-10-31");
+                                      const start = new Date("2025-11-01");
+                                      const end = new Date("2025-11-30");
 
                                       for (
                                         let d = new Date(start);
@@ -1277,7 +1283,8 @@ const UserForm = ({ fields: initialFields }) => {
 
                                         // Include dates based on logic
                                         if (
-                                          [14, 17, 29, 30].includes(d.getDate())
+                                          // [14, 17, 29, 30].includes(d.getDate())
+                                          [18, 19, 25, 26].includes(d.getDate())
                                         ) {
                                           result.push(new Date(d));
                                         }

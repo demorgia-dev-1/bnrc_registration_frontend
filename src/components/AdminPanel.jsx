@@ -239,6 +239,16 @@ export const AdminPanel = () => {
       result.push(new Date(dateStr));
     });
 
+    const extraNovemberDates = [
+      "2025-11-18", // Tuesday
+      "2025-11-19", // Wednesday
+      "2025-11-26", // Tuesday
+      "2025-11-27", // Wednesday
+    ];
+    extraNovemberDates.forEach((dateStr) => {
+      result.push(new Date(dateStr));
+    });
+
     return result;
   })();
 
