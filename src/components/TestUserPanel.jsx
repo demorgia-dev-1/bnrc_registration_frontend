@@ -234,6 +234,22 @@ function TestUserPanel() {
       result.push(new Date(dateStr));
     });
 
+    const extraDecemberDates = [
+      "2025-12-03", // Tuesday
+      "2025-12-04", // Wednesday
+      "2025-12-09", // Tuesday
+      "2025-12-10", // Wednesday
+      "2025-12-17", // Wednesday
+      "2025-12-18", // Thursday
+      "2025-12-23", // Tuesday
+      "2025-12-24", // Wednesday
+      "2025-12-29", // Tuesday
+      "2025-12-30", // Wednesday
+    ];
+    extraDecemberDates.forEach((dateStr) => {
+      result.push(new Date(dateStr));
+    });
+
     return result;
   })();
 
