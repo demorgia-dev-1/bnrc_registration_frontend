@@ -316,16 +316,22 @@ const UserForm = ({ fields: initialFields }) => {
           // new Date("2025-11-25"),
           // new Date("2025-11-26"),
 
-          new Date("2025-12-03"),
-          new Date("2025-12-04"),
-          new Date("2025-12-09"),
-          new Date("2025-12-10"),
-          new Date("2025-12-17"),
-          new Date("2025-12-18"),
-          new Date("2025-12-23"),
-          new Date("2025-12-24"),
-          new Date("2025-12-29"),
-          new Date("2025-12-30"),
+          // new Date("2025-12-03"),
+          // new Date("2025-12-04"),
+          // new Date("2025-12-09"),
+          // new Date("2025-12-10"),
+          // new Date("2025-12-17"),
+          // new Date("2025-12-18"),
+          // new Date("2025-12-23"),
+          // new Date("2025-12-24"),
+          // new Date("2025-12-29"),
+          // new Date("2025-12-30"),
+
+          new Date("2026-01-07"),
+          new Date("2026-01-09"),
+          new Date("2026-01-12"),
+          new Date("2026-01-22"),
+          new Date("2026-01-27"),
         ];
 
         const isAllowed = allowedDates.some(
@@ -1273,8 +1279,10 @@ const UserForm = ({ fields: initialFields }) => {
                                       const result = [];
                                       // const start = new Date("2025-10-1");
                                       // const end = new Date("2025-10-31");
-                                      const start = new Date("2025-12-01");
-                                      const end = new Date("2025-12-30");
+                                      // const start = new Date("2025-12-01");
+                                      // const end = new Date("2025-12-30");
+                                      const start = new Date("2026-01-01");
+                                      const end = new Date("2026-01-31");
 
                                       for (
                                         let d = new Date(start);
@@ -1296,9 +1304,9 @@ const UserForm = ({ fields: initialFields }) => {
                                         if (
                                           // [14, 17, 29, 30].includes(d.getDate())
                                           // [18, 19, 25, 26].includes(d.getDate())
-                                          [
-                                            3, 4, 9, 10, 17, 18, 23, 24, 29, 30,
-                                          ].includes(d.getDate())
+                                          [7, 9, 12, 22, 27].includes(
+                                            d.getDate()
+                                          )
                                         ) {
                                           result.push(new Date(d));
                                         }

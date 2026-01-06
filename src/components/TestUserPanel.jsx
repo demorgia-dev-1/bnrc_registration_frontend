@@ -250,6 +250,17 @@ function TestUserPanel() {
       result.push(new Date(dateStr));
     });
 
+    const extraJanuaryDates = [
+      "2026-01-07", // Wednesday
+      "2026-01-09", // Thursday
+      "2026-01-12", // Wednesday
+      "2026-01-22", // Thursday
+      "2026-01-27", // Wednesday
+    ];
+    extraJanuaryDates.forEach((dateStr) => {
+      result.push(new Date(dateStr));
+    });
+
     return result;
   })();
 
