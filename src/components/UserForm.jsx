@@ -277,36 +277,6 @@ const UserForm = ({ fields: initialFields }) => {
       if (type === "date" && /exam/i.test(name)) {
         const selectedDate = new Date(value);
         const allowedDates = [
-          // new Date("2025-06-13"),
-          // new Date("2025-06-14"),
-          // new Date("2025-06-16"),
-          // new Date("2025-06-17"),
-          // new Date("2025-06-20"),
-          // new Date("2025-06-21"),
-          // new Date("2025-06-23"),
-          // new Date("2025-06-24"),
-          // new Date("2025-06-27"),
-          // new Date("2025-06-28"),
-          // new Date("2025-06-30"),
-          // new Date("2025-07-01"),
-          // new Date("2025-07-04"),
-          // new Date("2025-07-05"),
-          // new Date("2025-07-07"),
-          // new Date("2025-07-08"),
-          // new Date("2025-07-11"),
-          // new Date("2025-07-12"),
-          // new Date("2025-07-14"),
-          // new Date("2025-07-15"),
-          // new Date("2025-07-18"),
-          // new Date("2025-07-19"),
-          // new Date("2025-07-21"),
-          // new Date("2025-07-22"),
-          // new Date("2025-07-25"),
-          // new Date("2025-07-26"),
-          // new Date("2025-07-28"),
-          // new Date("2025-07-29"),
-          // new Date("2025-07-12"),
-
           // new Date("2025-10-14"),
           // new Date("2025-10-17"),
           // new Date("2025-10-29"),
@@ -1277,10 +1247,7 @@ const UserForm = ({ fields: initialFields }) => {
                                       tomorrow.setDate(tomorrow.getDate() + 1);
 
                                       const result = [];
-                                      // const start = new Date("2025-10-1");
-                                      // const end = new Date("2025-10-31");
-                                      // const start = new Date("2025-12-01");
-                                      // const end = new Date("2025-12-30");
+
                                       const start = new Date("2026-01-01");
                                       const end = new Date("2026-01-31");
 
@@ -1302,8 +1269,6 @@ const UserForm = ({ fields: initialFields }) => {
 
                                         // Include dates based on logic
                                         if (
-                                          // [14, 17, 29, 30].includes(d.getDate())
-                                          // [18, 19, 25, 26].includes(d.getDate())
                                           [7, 9, 12, 22, 27].includes(
                                             d.getDate()
                                           )
@@ -1312,20 +1277,22 @@ const UserForm = ({ fields: initialFields }) => {
                                         }
                                       }
 
-                                      const blocked = new Set();
-                                      result.forEach((slot) => {
-                                        if (slot.getDay() === 1) {
-                                          blocked.add(slot.toDateString());
-                                          const prev = new Date(slot);
-                                          prev.setDate(prev.getDate() - 1);
-                                          blocked.add(prev.toDateString());
-                                        }
-                                      });
+                                      //   const blocked = new Set();
+                                      //   result.forEach((slot) => {
+                                      //     if (slot.getDay() === 1) {
+                                      //       blocked.add(slot.toDateString());
+                                      //       const prev = new Date(slot);
+                                      //       prev.setDate(prev.getDate() - 1);
+                                      //       blocked.add(prev.toDateString());
+                                      //     }
+                                      //   });
 
-                                      return result.filter(
-                                        (date) =>
-                                          !blocked.has(date.toDateString())
-                                      );
+                                      //   return result.filter(
+                                      //     (date) =>
+                                      //       !blocked.has(date.toDateString())
+                                      //   );
+                                      // })()}
+                                      return result;
                                     })()}
                                     // includeDates={(() => {
                                     //   const allowedDays = [1, 2, 5, 6];
