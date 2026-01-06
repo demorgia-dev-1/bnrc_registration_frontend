@@ -1256,16 +1256,8 @@ const UserForm = ({ fields: initialFields }) => {
                                         d <= end;
                                         d.setDate(d.getDate() + 1)
                                       ) {
-                                        const dateStr = d
-                                          .toISOString()
-                                          .split("T")[0];
-                                        const day = d.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-
                                         // Skip past dates
                                         if (d <= tomorrow) continue;
-
-                                        // Skip 5th September
-                                        if (dateStr === "2025-09-05") continue;
 
                                         // Include dates based on logic
                                         if (
