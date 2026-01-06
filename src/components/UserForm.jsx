@@ -259,15 +259,6 @@ const UserForm = ({ fields: initialFields }) => {
     );
   };
 
-  const parseYmdLocal = (ymd) => {
-    if (!ymd) return null;
-    const [y, m, d] = ymd.split("-").map(Number);
-    if (!y || !m || !d) return null;
-    return new Date(y, m - 1, d); // local midnight
-  };
-
-  const makeYmdLocal = (y, m, d) => new Date(y, m - 1, d); // local midnight
-
   const handleInputChange = async (e) => {
     const { name, value, type, checked, files, options } = e.target;
     let newValue;
@@ -1163,9 +1154,11 @@ const UserForm = ({ fields: initialFields }) => {
                               <div>
                                 {/exam/i.test(field.name) ? (
                                   <DatePicker
-                                    selected={parseYmdLocal(
+                                    selected={
                                       formResponses[field.name]
-                                    )}
+                                        ? new Date(formResponses[field.name])
+                                        : null
+                                    }
                                     onChange={(date) => {
                                       setDateErrors((prev) => ({
                                         ...prev,
