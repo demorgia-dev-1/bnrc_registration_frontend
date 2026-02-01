@@ -276,6 +276,17 @@ export const AdminPanel = () => {
       result.push(new Date(dateStr));
     });
 
+    const extraFebruaryDates = [
+      "2026-02-03", // Tuesday
+      "2026-02-12", // Tuesday
+      "2026-02-17", // Tuesday
+      "2026-02-23", // Tuesday
+      "2026-02-25", // Thursday
+    ];
+    extraFebruaryDates.forEach((dateStr) => {
+      result.push(new Date(dateStr));
+    });
+
     return result;
   })();
 
