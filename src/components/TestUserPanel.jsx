@@ -271,6 +271,15 @@ function TestUserPanel() {
     extraFebruaryDates.forEach((dateStr) => {
       result.push(new Date(dateStr));
     });
+    const extraMarchDates = [
+      "2026-03-06", // Friday
+      "2026-03-17", // Tuesday
+      "2026-03-19", // Thursday
+      "2026-03-25", // Wednesday
+    ];
+    extraMarchDates.forEach((dateStr) => {
+      result.push(new Date(dateStr));
+    });
 
     return result;
   })();
