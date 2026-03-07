@@ -1197,7 +1197,7 @@ const UserForm = ({ fields: initialFields }) => {
                                       const result = [];
 
                                       const start = new Date("2026-03-01");
-                                      const end = new Date("2026-02-31");
+                                      const end = new Date("2026-03-31");
 
                                       for (
                                         let d = new Date(start);
