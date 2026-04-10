@@ -281,6 +281,15 @@ function TestUserPanel() {
       result.push(new Date(dateStr));
     });
 
+    const extraAprilDates = [
+      "2026-04-09", // Wednesday
+      "2026-04-15", // Wednesday
+      "2026-04-22", // Wednesday
+      "2026-04-28", // Thursday
+    ];
+    extraAprilDates.forEach((dateStr) => {
+      result.push(new Date(dateStr));
+    });
     return result;
   })();
 
