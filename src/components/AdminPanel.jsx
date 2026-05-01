@@ -307,6 +307,16 @@ export const AdminPanel = () => {
       result.push(new Date(dateStr));
     });
 
+    const extraMayDates = [
+      "2026-05-05", // Wednesday
+      "2026-05-14", // Wednesday
+      "2026-05-20", // Wednesday
+      "2026-05-25", // Wednesday
+    ];
+    extraMayDates.forEach((dateStr) => {
+      result.push(new Date(dateStr));
+    });
+
     return result;
   })();
 

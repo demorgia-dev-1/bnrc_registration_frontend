@@ -290,6 +290,17 @@ function TestUserPanel() {
     extraAprilDates.forEach((dateStr) => {
       result.push(new Date(dateStr));
     });
+
+    const extraMayDates = [
+      "2026-05-05", // Wednesday
+      "2026-05-14", // Wednesday
+      "2026-05-20", // Wednesday
+      "2026-05-25", // Thursday
+    ];
+    extraMayDates.forEach((dateStr) => {
+      result.push(new Date(dateStr));
+    });
+
     return result;
   })();
 
