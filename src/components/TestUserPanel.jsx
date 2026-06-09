@@ -300,6 +300,15 @@ function TestUserPanel() {
     extraMayDates.forEach((dateStr) => {
       result.push(new Date(dateStr));
     });
+    const extraJuneDates = [
+      "2026-06-09", // Wednesday
+      "2026-06-11", // Wednesday
+      "2026-06-19", // Wednesday
+      "2026-06-25", // Thursday
+    ];
+    extraJuneDates.forEach((dateStr) => {
+      result.push(new Date(dateStr));
+    });
 
     return result;
   })();
