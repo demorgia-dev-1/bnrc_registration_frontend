@@ -286,27 +286,14 @@ const UserForm = ({ fields: initialFields }) => {
           // new Date("2025-11-25"),
           // new Date("2025-11-26"),
 
-          // new Date("2025-12-03"),
-          // new Date("2025-12-04"),
-          // new Date("2025-12-09"),
-          // new Date("2025-12-10"),
-          // new Date("2025-12-17"),
-          // new Date("2025-12-18"),
-          // new Date("2025-12-23"),
-          // new Date("2025-12-24"),
-          // new Date("2025-12-29"),
-          // new Date("2025-12-30"),
-
-          // new Date("2026-02-03"),
-          // new Date("2026-02-12"),
-          // new Date("2026-02-17"),
-          // new Date("2026-02-23"),
-          // new Date("2026-02-25"),
-
-          new Date("2026-06-09"),
-          new Date("2026-06-11"),
-          new Date("2026-06-19"),
-          new Date("2026-06-25"),
+          // new Date("2026-06-09"),
+          // new Date("2026-06-11"),
+          // new Date("2026-06-19"),
+          // new Date("2026-06-25"),
+          new Date("2026-07-09"),
+          new Date("2026-07-15"),
+          new Date("2026-07-21"),
+          new Date("2026-07-29"),
         ];
 
         const isAllowed = allowedDates.some(
@@ -1196,8 +1183,8 @@ const UserForm = ({ fields: initialFields }) => {
 
                                       const result = [];
 
-                                      const start = new Date("2026-06-01");
-                                      const end = new Date("2026-06-30");
+                                      const start = new Date("2026-07-01");
+                                      const end = new Date("2026-07-31");
 
                                       for (
                                         let d = new Date(start);
@@ -1209,7 +1196,7 @@ const UserForm = ({ fields: initialFields }) => {
 
                                         // Include dates based on logic
                                         if (
-                                          [9, 11, 19, 25].includes(d.getDate())
+                                          [9, 15, 21, 29].includes(d.getDate())
                                         ) {
                                           result.push(new Date(d));
                                         }

@@ -325,6 +325,15 @@ export const AdminPanel = () => {
     extraJuneDates.forEach((dateStr) => {
       result.push(new Date(dateStr));
     });
+    const extraJulyDates = [
+      "2026-07-09", // Thursday
+      "2026-07-15", // Wednesday
+      "2026-07-21", // Thursday
+      "2026-07-29", // Wednesday
+    ];
+    extraJulyDates.forEach((dateStr) => {
+      result.push(new Date(dateStr));
+    });
 
     return result;
   })();
