@@ -1183,8 +1183,8 @@ const UserForm = ({ fields: initialFields }) => {
 
                                       const result = [];
 
-                                      const start = new Date("2026-07-01");
-                                      const end = new Date("2026-07-31");
+                                      const start = new Date("2026-08-01");
+                                      const end = new Date("2026-08-31");
 
                                       for (
                                         let d = new Date(start);
@@ -1196,7 +1196,7 @@ const UserForm = ({ fields: initialFields }) => {
 
                                         // Include dates based on logic
                                         if (
-                                          [9, 15, 21, 29].includes(d.getDate())
+                                          [10, 11, 12].includes(d.getDate())
                                         ) {
                                           result.push(new Date(d));
                                         }
