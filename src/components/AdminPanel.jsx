@@ -339,6 +339,16 @@ export const AdminPanel = () => {
       result.push(new Date(dateStr));
     });
 
+    const extraSeptemberDates2026 = [
+      "2026-09-16", // Wednesday
+      "2026-09-17", // Thursday
+      "2026-09-22", // Tuesday
+      "2026-09-23", // Wednesday
+    ];
+    extraSeptemberDates2026.forEach((dateStr) => {
+      result.push(new Date(dateStr));
+    });
+
     return result;
   })();
 
