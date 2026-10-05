@@ -349,6 +349,16 @@ export const AdminPanel = () => {
       result.push(new Date(dateStr));
     });
 
+    const extraOctoberDates2026 = [
+      "2026-10-12", // Wednesday
+      "2026-10-13", // Thursday
+      "2026-10-14", // Wednesday
+      "2026-10-15", // Thursday
+    ];
+    extraOctoberDates2026.forEach((dateStr) => {
+      result.push(new Date(dateStr));
+    });
+
     return result;
   })();
 

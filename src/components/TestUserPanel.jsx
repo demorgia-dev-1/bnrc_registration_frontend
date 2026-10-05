@@ -334,6 +334,16 @@ function TestUserPanel() {
       result.push(new Date(dateStr));
     });
 
+    const extraOctoberDates2 = [
+      "2026-10-12",
+      "2026-10-13",
+      "2026-10-14",
+      "2026-10-15",
+    ];
+    extraOctoberDates2.forEach((dateStr) => {
+      result.push(new Date(dateStr));
+    });
+
     return result;
   })();
 
