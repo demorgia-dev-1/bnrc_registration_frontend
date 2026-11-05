@@ -198,149 +198,159 @@ function TestUserPanel() {
     //   result.push(new Date(dateStr));
     // });
 
-    const extraSeptemberDates = [
-      "2025-09-02", // Tuesday
-      "2025-09-04", // Thursday special
-      "2025-09-09", // Tuesday
-      "2025-09-12", // Friday
-      "2025-09-16", // Tuesday
-      "2025-09-19", // Friday
-      "2025-09-23", // Tuesday
-      "2025-09-26", // Friday
-      "2025-09-30", // Tuesday
-    ];
+    // const extraSeptemberDates = [
+    //   "2025-09-02", // Tuesday
+    //   "2025-09-04", // Thursday special
+    //   "2025-09-09", // Tuesday
+    //   "2025-09-12", // Friday
+    //   "2025-09-16", // Tuesday
+    //   "2025-09-19", // Friday
+    //   "2025-09-23", // Tuesday
+    //   "2025-09-26", // Friday
+    //   "2025-09-30", // Tuesday
+    // ];
 
-    extraSeptemberDates.forEach((dateStr) => {
-      result.push(new Date(dateStr));
-    });
+    // extraSeptemberDates.forEach((dateStr) => {
+    //   result.push(new Date(dateStr));
+    // });
 
-    const extraOctoberDates = [
-      "2025-10-14", // Friday
-      "2025-10-17", // Friday
-      "2025-10-29", // Tuesday
-      "2025-10-30", // Friday
-    ];
-    extraOctoberDates.forEach((dateStr) => {
-      result.push(new Date(dateStr));
-    });
+    // const extraOctoberDates = [
+    //   "2025-10-14", // Friday
+    //   "2025-10-17", // Friday
+    //   "2025-10-29", // Tuesday
+    //   "2025-10-30", // Friday
+    // ];
+    // extraOctoberDates.forEach((dateStr) => {
+    //   result.push(new Date(dateStr));
+    // });
 
-    const extraNovemberDates = [
-      "2025-11-18", // Tuesday
-      "2025-11-19", // Wednesday
-      "2025-11-26", // Tuesday
-      "2025-11-27", // Wednesday
-    ];
-    extraNovemberDates.forEach((dateStr) => {
-      result.push(new Date(dateStr));
-    });
+    // const extraNovemberDates = [
+    //   "2025-11-18", // Tuesday
+    //   "2025-11-19", // Wednesday
+    //   "2025-11-26", // Tuesday
+    //   "2025-11-27", // Wednesday
+    // ];
+    // extraNovemberDates.forEach((dateStr) => {
+    //   result.push(new Date(dateStr));
+    // });
 
-    const extraDecemberDates = [
-      "2025-12-03", // Tuesday
-      "2025-12-04", // Wednesday
-      "2025-12-09", // Tuesday
-      "2025-12-10", // Wednesday
-      "2025-12-17", // Wednesday
-      "2025-12-18", // Thursday
-      "2025-12-23", // Tuesday
-      "2025-12-24", // Wednesday
-      "2025-12-29", // Tuesday
-      "2025-12-30", // Wednesday
-    ];
-    extraDecemberDates.forEach((dateStr) => {
-      result.push(new Date(dateStr));
-    });
+    // const extraDecemberDates = [
+    //   "2025-12-03", // Tuesday
+    //   "2025-12-04", // Wednesday
+    //   "2025-12-09", // Tuesday
+    //   "2025-12-10", // Wednesday
+    //   "2025-12-17", // Wednesday
+    //   "2025-12-18", // Thursday
+    //   "2025-12-23", // Tuesday
+    //   "2025-12-24", // Wednesday
+    //   "2025-12-29", // Tuesday
+    //   "2025-12-30", // Wednesday
+    // ];
+    // extraDecemberDates.forEach((dateStr) => {
+    //   result.push(new Date(dateStr));
+    // });
 
-    const extraJanuaryDates = [
-      "2026-01-07", // Wednesday
-      "2026-01-09", // Tuesday
-      "2026-01-12", // Wednesday
-      "2026-01-22", // Tuesday
-      "2026-01-27", // Tuesday
-    ];
-    extraJanuaryDates.forEach((dateStr) => {
-      result.push(new Date(dateStr));
-    });
+    // const extraJanuaryDates = [
+    //   "2026-01-07", // Wednesday
+    //   "2026-01-09", // Tuesday
+    //   "2026-01-12", // Wednesday
+    //   "2026-01-22", // Tuesday
+    //   "2026-01-27", // Tuesday
+    // ];
+    // extraJanuaryDates.forEach((dateStr) => {
+    //   result.push(new Date(dateStr));
+    // });
 
-    const extraFebruaryDates = [
-      "2026-02-03", // Tuesday
-      "2026-02-12", // Tuesday
-      "2026-02-17", // Tuesday
-      "2026-02-23", // Tuesday
-      "2026-02-25", // Thursday
-    ];
-    extraFebruaryDates.forEach((dateStr) => {
-      result.push(new Date(dateStr));
-    });
-    const extraMarchDates = [
-      "2026-03-06", // Friday
-      "2026-03-17", // Tuesday
-      "2026-03-19", // Thursday
-      "2026-03-25", // Wednesday
-    ];
-    extraMarchDates.forEach((dateStr) => {
-      result.push(new Date(dateStr));
-    });
+    // const extraFebruaryDates = [
+    //   "2026-02-03", // Tuesday
+    //   "2026-02-12", // Tuesday
+    //   "2026-02-17", // Tuesday
+    //   "2026-02-23", // Tuesday
+    //   "2026-02-25", // Thursday
+    // ];
+    // extraFebruaryDates.forEach((dateStr) => {
+    //   result.push(new Date(dateStr));
+    // });
+    // const extraMarchDates = [
+    //   "2026-03-06", // Friday
+    //   "2026-03-17", // Tuesday
+    //   "2026-03-19", // Thursday
+    //   "2026-03-25", // Wednesday
+    // ];
+    // extraMarchDates.forEach((dateStr) => {
+    //   result.push(new Date(dateStr));
+    // });
 
-    const extraAprilDates = [
-      "2026-04-09", // Wednesday
-      "2026-04-15", // Wednesday
-      "2026-04-22", // Wednesday
-      "2026-04-28", // Thursday
-    ];
-    extraAprilDates.forEach((dateStr) => {
-      result.push(new Date(dateStr));
-    });
+    // const extraAprilDates = [
+    //   "2026-04-09", // Wednesday
+    //   "2026-04-15", // Wednesday
+    //   "2026-04-22", // Wednesday
+    //   "2026-04-28", // Thursday
+    // ];
+    // extraAprilDates.forEach((dateStr) => {
+    //   result.push(new Date(dateStr));
+    // });
 
-    const extraMayDates = [
-      "2026-05-05", // Wednesday
-      "2026-05-14", // Wednesday
-      "2026-05-20", // Wednesday
-      "2026-05-25", // Thursday
-    ];
-    extraMayDates.forEach((dateStr) => {
-      result.push(new Date(dateStr));
-    });
-    const extraJuneDates = [
-      "2026-06-09", // Wednesday
-      "2026-06-11", // Wednesday
-      "2026-06-19", // Wednesday
-      "2026-06-25", // Thursday
-    ];
-    extraJuneDates.forEach((dateStr) => {
-      result.push(new Date(dateStr));
-    });
-    const extraJulyDates = [
-      "2026-07-09", // Thursday
-      "2026-07-15", // Wednesday
-      "2026-07-21", // Thursday
-      "2026-07-29", // Wednesday
-    ];
-    extraJulyDates.forEach((dateStr) => {
-      result.push(new Date(dateStr));
-    });
+    // const extraMayDates = [
+    //   "2026-05-05", // Wednesday
+    //   "2026-05-14", // Wednesday
+    //   "2026-05-20", // Wednesday
+    //   "2026-05-25", // Thursday
+    // ];
+    // extraMayDates.forEach((dateStr) => {
+    //   result.push(new Date(dateStr));
+    // });
+    // const extraJuneDates = [
+    //   "2026-06-09", // Wednesday
+    //   "2026-06-11", // Wednesday
+    //   "2026-06-19", // Wednesday
+    //   "2026-06-25", // Thursday
+    // ];
+    // extraJuneDates.forEach((dateStr) => {
+    //   result.push(new Date(dateStr));
+    // });
+    // const extraJulyDates = [
+    //   "2026-07-09", // Thursday
+    //   "2026-07-15", // Wednesday
+    //   "2026-07-21", // Thursday
+    //   "2026-07-29", // Wednesday
+    // ];
+    // extraJulyDates.forEach((dateStr) => {
+    //   result.push(new Date(dateStr));
+    // });
 
-    const extraAugustDates = ["2026-08-10", "2026-08-11", "2026-08-12"];
-    extraAugustDates.forEach((dateStr) => {
-      result.push(new Date(dateStr));
-    });
+    // const extraAugustDates = ["2026-08-10", "2026-08-11", "2026-08-12"];
+    // extraAugustDates.forEach((dateStr) => {
+    //   result.push(new Date(dateStr));
+    // });
 
-    const extraSeptemberDates2 = [
-      "2026-09-16",
-      "2026-09-17",
-      "2026-09-22",
-      "2026-09-23",
-    ];
-    extraSeptemberDates2.forEach((dateStr) => {
-      result.push(new Date(dateStr));
-    });
+    // const extraSeptemberDates2 = [
+    //   "2026-09-16",
+    //   "2026-09-17",
+    //   "2026-09-22",
+    //   "2026-09-23",
+    // ];
+    // extraSeptemberDates2.forEach((dateStr) => {
+    //   result.push(new Date(dateStr));
+    // });
 
-    const extraOctoberDates2 = [
-      "2026-10-12",
-      "2026-10-13",
-      "2026-10-14",
-      "2026-10-15",
+    // const extraOctoberDates2 = [
+    //   "2026-10-12",
+    //   "2026-10-13",
+    //   "2026-10-14",
+    //   "2026-10-15",
+    // ];
+    // extraOctoberDates2.forEach((dateStr) => {
+    //   result.push(new Date(dateStr));
+    // });
+
+    const extraNovemberDates2 = [
+      "2026-11-18",
+      "2026-11-19",
+      "2026-11-27",
+      "2026-11-30",
     ];
-    extraOctoberDates2.forEach((dateStr) => {
+    extraNovemberDates2.forEach((dateStr) => {
       result.push(new Date(dateStr));
     });
 
